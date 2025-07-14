@@ -97,7 +97,7 @@ def verify_installation():
         import pandas as pd
         print("✅ pandas package available")
         
-        import beautifulsoup4
+        import bs4
         print("✅ beautifulsoup4 package available")
         
         # Test configuration
