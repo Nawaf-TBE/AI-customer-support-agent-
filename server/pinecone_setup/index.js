@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 const { Pinecone } = require('@pinecone-database/pinecone');
 const OpenAI = require('openai');
 
