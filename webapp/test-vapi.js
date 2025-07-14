@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: '.env.local' });
 
 console.log('🔍 Testing Webapp API Keys...\n');
 

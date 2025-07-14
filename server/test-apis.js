@@ -1,6 +1,6 @@
 require('dotenv').config();
 const Exa = require('exa-js').default;
-const fetch = require('node-fetch');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 console.log('🔍 Testing API Keys...\n');
 
