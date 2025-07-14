@@ -364,7 +364,7 @@ class AvenScraper:
             }
         }
         with open(output_paths['processed_data'], 'w', encoding='utf-8') as f:
-            json.dump(chunks_data, f, indent=2, ensure_ascii=False)
+            json.dump(chunks_data, f, indent=2, ensure_ascii=False, default=str)
         
         # Save summary CSV
         summary_data = []
