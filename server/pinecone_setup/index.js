@@ -39,19 +39,11 @@ async function initializePinecone() {
     console.log('🔧 Initializing Pinecone client...');
     
     const apiKey = process.env.PINECONE_API_KEY;
-    const environment = process.env.PINECONE_ENVIRONMENT;
     
     if (!apiKey) {
       throw new PineconeError(
         'PINECONE_API_KEY environment variable is not set',
         'MISSING_API_KEY'
-      );
-    }
-    
-    if (!environment) {
-      throw new PineconeError(
-        'PINECONE_ENVIRONMENT environment variable is not set',
-        'MISSING_ENVIRONMENT'
       );
     }
     
