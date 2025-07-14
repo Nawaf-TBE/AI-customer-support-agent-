@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Pinecone } = require('pinecone-client');
+const { Pinecone } = require('@pinecone-database/pinecone');
 const OpenAI = require('openai');
 
 /**
@@ -56,8 +56,7 @@ async function initializePinecone() {
     }
     
     pineconeClient = new Pinecone({
-      apiKey: apiKey,
-      environment: environment
+      apiKey: apiKey
     });
     
     console.log('✅ Pinecone client initialized successfully');
@@ -147,13 +146,13 @@ async function createIndex(indexName, dimension = CONFIG.VECTOR_DIMENSION) {
     const indexConfig = {
       name: indexName,
       dimension: dimension,
+      metric: 'cosine',
       spec: {
         serverless: {
           cloud: 'aws',
           region: 'us-east-1'
         }
-      },
-      metric: 'cosine'
+      }
     };
     
     await pineconeClient.createIndex(indexConfig);
