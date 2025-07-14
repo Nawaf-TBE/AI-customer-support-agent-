@@ -14,6 +14,7 @@
     "dotenv": "^17.2.0",
     "exa-js": "^1.8.20",
     "node-fetch": "^3.3.2",
+    "openai": "^5.9.0",
     "pinecone-client": "^2.0.0"
   }
 }
