@@ -3,7 +3,11 @@ Configuration module for Aven Support Scraper
 """
 import os
 from typing import List, Optional
-from pydantic import BaseSettings, Field
+try:
+    from pydantic_settings import BaseSettings
+    from pydantic import Field
+except ImportError:
+    from pydantic import BaseSettings, Field
 from dotenv import load_dotenv
 
 # Load environment variables
