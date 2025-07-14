@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "exa-js": "^1.8.20",
     "pinecone-client": "^2.0.0"
   }
 }
