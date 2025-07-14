@@ -247,7 +247,8 @@ function createTextChunks(text, chunkSize = CONFIG.CHUNK_SIZE, overlap = CONFIG.
       const lastSpaceIndex = chunk.lastIndexOf(' ');
       if (lastSpaceIndex > chunkSize * 0.7) { // Only break at word if it's not too far back
         chunk = chunk.slice(0, lastSpaceIndex);
-        endIndex = startIndex + lastSpaceIndex;
+        const newEndIndex = startIndex + lastSpaceIndex;
+        endIndex = newEndIndex;
       }
     }
     
