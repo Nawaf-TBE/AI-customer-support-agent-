@@ -1,0 +1,13 @@
+# Exa.ai API Configuration
+EXA_API_KEY=your_exa_api_key_here
+
+# Output Configuration
+OUTPUT_DIR=./scraped_data
+LOG_LEVEL=INFO
+
+# Scraping Configuration
+MAX_SUBPAGES=50
+REQUESTS_PER_MINUTE=30
+MAX_RETRIES=3
+CHUNK_SIZE=1000
+OVERLAP_SIZE=100 
