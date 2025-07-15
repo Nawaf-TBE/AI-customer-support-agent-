@@ -1,0 +1,41 @@
+{
+  "scraping_config": {
+    "base_url": "https://www.aven.com/support",
+    "max_subpages": 3,
+    "chunk_size": 1000,
+    "target_content": [
+      "faq",
+      "guide",
+      "tutorial",
+      "help",
+      "support",
+      "documentation",
+      "troubleshooting",
+      "getting started",
+      "how to",
+      "setup",
+      "installation"
+    ]
+  },
+  "session_stats": {
+    "start_time": "2025-07-14 16:23:07.274702",
+    "urls_discovered": 1,
+    "urls_scraped": 1,
+    "urls_failed": 0,
+    "total_chunks": 41,
+    "total_words": 7262,
+    "content_types": {
+      "troubleshooting": 1
+    },
+    "end_time": "2025-07-14 16:24:42.870885",
+    "duration_minutes": 1.5932697166666665
+  },
+  "output_files": {
+    "raw_data": "./scraped_data/aven_support_raw.json",
+    "processed_data": "./scraped_data/aven_support_processed.json",
+    "summary_csv": "./scraped_data/aven_support_summary.csv",
+    "chunks_dir": "./scraped_data/content_chunks",
+    "metadata": "./scraped_data/scraping_metadata.json",
+    "logs": "./scraped_data/scraping.log"
+  }
+}
