@@ -234,12 +234,12 @@ export default function ChatInterface() {
                     {formatTimestamp(message.timestamp)}
                   </span>
                   {message.type === 'user' && (
-                    <span className={`text-xs ${
+                    <span className={`text-xs message-status ${
                       message.status === 'sending' 
-                        ? 'text-gray-400' 
+                        ? 'message-status-sending text-gray-400' 
                         : message.status === 'delivered' 
-                          ? 'text-green-500' 
-                          : 'text-red-500'
+                          ? 'message-status-delivered text-green-500' 
+                          : 'message-status-error'
                     }`}>
                       {message.status === 'sending' ? '⏳' : message.status === 'delivered' ? '✓' : '❌'}
                     </span>
