@@ -89,12 +89,44 @@ export default function ChatInterface() {
   }
 
   const generateMockResponse = (userMessage) => {
+    const message = userMessage.toLowerCase()
+    
+    // More intelligent mock responses based on user input
+    if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
+      return "Hello! Welcome to our AI support system. I'm here to help you with any questions or issues you might have. What can I assist you with today?"
+    }
+    
+    if (message.includes('problem') || message.includes('issue') || message.includes('error')) {
+      return "I understand you're experiencing an issue. Let me help you troubleshoot this. Could you please provide more details about what specifically is happening? I'll guide you through the solution step by step."
+    }
+    
+    if (message.includes('account') || message.includes('login') || message.includes('password')) {
+      return "I can help you with account-related issues. For security reasons, I'll need to verify your identity first. Are you having trouble logging in, or do you need help with account settings?"
+    }
+    
+    if (message.includes('payment') || message.includes('billing') || message.includes('charge')) {
+      return "I can assist you with billing and payment inquiries. Please note that for security, I cannot access specific payment details, but I can help you understand charges, update payment methods, or direct you to the right resources."
+    }
+    
+    if (message.includes('cancel') || message.includes('refund')) {
+      return "I understand you'd like to discuss cancellation or refunds. Let me help you with this process. Can you tell me more about what you'd like to cancel or your reason for requesting a refund?"
+    }
+    
+    if (message.includes('how') || message.includes('tutorial') || message.includes('guide')) {
+      return "I'd be happy to walk you through the process! Let me provide you with a step-by-step guide. Which specific feature or task would you like help with?"
+    }
+    
+    if (message.includes('thank')) {
+      return "You're very welcome! I'm glad I could help. Is there anything else you'd like assistance with today? I'm here whenever you need support."
+    }
+    
+    // Default contextual responses
     const responses = [
-      'I understand your concern. Let me help you with that. Based on your query, here are the steps you can follow...',
-      'Thank you for reaching out! I\'ve found some relevant information that should help resolve your issue.',
-      'I see what you\'re asking about. This is a common question, and I have the perfect solution for you.',
-      'Great question! Let me provide you with the most up-to-date information on this topic.',
-      'I\'m here to help! Based on our knowledge base, here\'s what I recommend...'
+      `I understand you're asking about "${userMessage}". Let me provide you with the most relevant information and help you resolve this. Based on our knowledge base, here's what I recommend...`,
+      `Thank you for reaching out about this matter. I've analyzed your query and found some helpful information that should address your concerns. Let me walk you through the solution.`,
+      `Great question! This is something many of our users ask about. I have the perfect solution for you, and I'll make sure to explain it clearly so you can get back on track.`,
+      `I see what you're looking for. Let me provide you with accurate, up-to-date information about this topic. Here's everything you need to know...`,
+      `I'm here to help with exactly this type of question! Based on your inquiry, I can provide several options and recommendations. Let me guide you through the best approach.`
     ]
     return responses[Math.floor(Math.random() * responses.length)]
   }
