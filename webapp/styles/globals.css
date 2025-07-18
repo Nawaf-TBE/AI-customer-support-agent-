@@ -56,6 +56,22 @@
   .typing-dot {
     @apply w-2 h-2 bg-gray-400 rounded-full animate-pulse-dot;
   }
+  
+  .message-status {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  .message-status-sending {
+    @apply opacity-70 animate-pulse;
+  }
+  
+  .message-status-delivered {
+    @apply opacity-100;
+  }
+  
+  .message-status-error {
+    @apply opacity-90 text-red-500;
+  }
 }
 
 @layer utilities {
