@@ -82,20 +82,71 @@ export default function ChatInterface() {
       ))
     }, 500)
 
-    // Simulate AI response (replace with actual API call later)
-    setTimeout(() => {
+    try {
+      // TODO: Replace this mock response with actual API call
+      // Example API integration:
+      /*
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage.content,
+          conversation_id: conversationId // if maintaining conversation context
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+      
+      const data = await response.json();
       const aiResponse = {
         id: Date.now() + 1,
         type: 'ai',
-        content: generateMockResponse(userMessage.content),
+        content: data.response,
+        timestamp: new Date(),
+        status: 'delivered'
+      };
+      */
+      
+      // Mock response for demo (remove when implementing real API)
+      setTimeout(() => {
+        const aiResponse = {
+          id: Date.now() + 1,
+          type: 'ai',
+          content: generateMockResponse(userMessage.content),
+          timestamp: new Date(),
+          status: 'delivered'
+        }
+        
+        setMessages(prev => [...prev, aiResponse])
+        setIsTyping(false)
+        setIsLoading(false)
+      }, 1500 + Math.random() * 1000) // Simulate variable response time
+      
+    } catch (error) {
+      console.error('Error getting AI response:', error)
+      
+      // Update user message status to error
+      setMessages(prev => prev.map(msg => 
+        msg.id === userMessage.id ? { ...msg, status: 'error' } : msg
+      ))
+      
+      // Add error message
+      const errorResponse = {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: 'I apologize, but I\'m having trouble responding right now. Please try again in a moment.',
         timestamp: new Date(),
         status: 'delivered'
       }
       
-      setMessages(prev => [...prev, aiResponse])
+      setMessages(prev => [...prev, errorResponse])
       setIsTyping(false)
       setIsLoading(false)
-    }, 1500 + Math.random() * 1000) // Simulate variable response time
+    }
   }
 
   const generateMockResponse = (userMessage) => {
