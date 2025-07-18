@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{\"components/useVoiceInput.js -> @vapi-ai/web\":{\"id\":\"components/useVoiceInput.js -> @vapi-ai/web\",\"files\":[\"static/chunks/node_modules_vapi-ai_web_dist_vapi_js.js\"]}}"
+self.__REACT_LOADABLE_MANIFEST="{}"

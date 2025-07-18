@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, MicOff, Bot, User, AlertCircle } from 'lucide-react'
+import { Send, Mic, MicOff, Bot, User, AlertCircle, Trash2, RotateCcw } from 'lucide-react'
 import { useVoiceInput } from './useVoiceInput'
 
 export default function ChatInterface() {
@@ -9,7 +9,8 @@ export default function ChatInterface() {
       id: 1,
       type: 'ai',
       content: 'Hello! I\'m your AI customer support assistant. How can I help you today?',
-      timestamp: new Date()
+      timestamp: new Date(),
+      status: 'delivered'
     }
   ])
   const [inputValue, setInputValue] = useState('')
@@ -64,7 +65,8 @@ export default function ChatInterface() {
       id: Date.now(),
       type: 'user',
       content: inputValue.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
+      status: 'sending'
     }
 
     // Add user message
@@ -73,13 +75,21 @@ export default function ChatInterface() {
     setIsLoading(true)
     setIsTyping(true)
 
+    // Update message status to delivered
+    setTimeout(() => {
+      setMessages(prev => prev.map(msg => 
+        msg.id === userMessage.id ? { ...msg, status: 'delivered' } : msg
+      ))
+    }, 500)
+
     // Simulate AI response (replace with actual API call later)
     setTimeout(() => {
       const aiResponse = {
         id: Date.now() + 1,
         type: 'ai',
         content: generateMockResponse(userMessage.content),
-        timestamp: new Date()
+        timestamp: new Date(),
+        status: 'delivered'
       }
       
       setMessages(prev => [...prev, aiResponse])
@@ -151,6 +161,18 @@ export default function ChatInterface() {
     return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
+  const clearConversation = () => {
+    setMessages([
+      {
+        id: 1,
+        type: 'ai',
+        content: 'Hello! I\'m your AI customer support assistant. How can I help you today?',
+        timestamp: new Date(),
+        status: 'delivered'
+      }
+    ])
+  }
+
   return (
     <div className="flex flex-col h-screen max-w-4xl mx-auto bg-white shadow-lg">
       {/* Header */}
@@ -159,13 +181,22 @@ export default function ChatInterface() {
           <div className="w-10 h-10 bg-primary-500 rounded-full flex items-center justify-center">
             <Bot className="w-6 h-6 text-white" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-semibold text-gray-900">AI Support Assistant</h1>
             <p className="text-sm text-gray-500">Always here to help</p>
           </div>
-          <div className="ml-auto flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-            <span className="text-sm text-gray-500">Online</span>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={clearConversation}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Clear conversation"
+            >
+              <RotateCcw className="w-5 h-5" />
+            </button>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+              <span className="text-sm text-gray-500">Online</span>
+            </div>
           </div>
         </div>
       </div>
@@ -196,11 +227,24 @@ export default function ChatInterface() {
                 >
                   <p className="text-sm leading-relaxed">{message.content}</p>
                 </div>
-                <span className={`text-xs text-gray-400 ${
-                  message.type === 'user' ? 'text-right' : 'text-left'
+                <div className={`flex items-center space-x-2 ${
+                  message.type === 'user' ? 'justify-end' : 'justify-start'
                 }`}>
-                  {formatTimestamp(message.timestamp)}
-                </span>
+                  <span className={`text-xs text-gray-400`}>
+                    {formatTimestamp(message.timestamp)}
+                  </span>
+                  {message.type === 'user' && (
+                    <span className={`text-xs ${
+                      message.status === 'sending' 
+                        ? 'text-gray-400' 
+                        : message.status === 'delivered' 
+                          ? 'text-green-500' 
+                          : 'text-red-500'
+                    }`}>
+                      {message.status === 'sending' ? '⏳' : message.status === 'delivered' ? '✓' : '❌'}
+                    </span>
+                  )}
+                </div>
               </div>
 
               {message.type === 'user' && (
