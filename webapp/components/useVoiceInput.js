@@ -165,6 +165,21 @@ export const useVoiceInput = () => {
     }
   }
 
+  // Expose Vapi instance for TTS and advanced control
+  const getVapiInstance = () => vapiRef.current;
+
+  // Start a Vapi conversation (voice-to-text)
+  const startVapiConversation = async () => {
+    if (!isVapiEnabled || !vapiRef.current) return;
+    setError(null);
+    setTranscript('');
+    try {
+      await vapiRef.current.start();
+    } catch (err) {
+      setError('Failed to start Vapi conversation');
+    }
+  };
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -189,6 +204,8 @@ export const useVoiceInput = () => {
     stopRecording,
     toggleRecording,
     clearTranscript: () => setTranscript(''),
-    clearError: () => setError(null)
+    clearError: () => setError(null),
+    getVapiInstance,
+    startVapiConversation
   }
 } 

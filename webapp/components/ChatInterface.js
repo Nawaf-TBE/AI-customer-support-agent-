@@ -25,7 +25,9 @@ export default function ChatInterface() {
     error: voiceError,
     toggleRecording,
     clearTranscript,
-    clearError
+    clearError,
+    getVapiInstance,
+    startVapiConversation
   } = useVoiceInput()
   
   // Refs
@@ -53,6 +55,57 @@ export default function ChatInterface() {
       clearTranscript()
     }
   }, [transcript, clearTranscript])
+
+  // Handle Vapi voice-to-text and text-to-voice integration
+  useEffect(() => {
+    if (isVapiEnabled && transcript) {
+      // Add user message to chat
+      const userMessage = {
+        id: Date.now(),
+        type: 'user',
+        content: transcript,
+        timestamp: new Date(),
+        status: 'sending'
+      }
+      setMessages(prev => [...prev, userMessage])
+      setIsTyping(true)
+      setIsLoading(true)
+      // Send to /api/chat endpoint
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: transcript })
+      })
+        .then(res => res.json())
+        .then(data => {
+          const aiMessage = {
+            id: Date.now() + 1,
+            type: 'ai',
+            content: data.response,
+            timestamp: new Date(),
+            status: 'delivered'
+          }
+          setMessages(prev => prev.map(msg =>
+            msg.id === userMessage.id ? { ...msg, status: 'delivered' } : msg
+          ).concat(aiMessage))
+          setIsTyping(false)
+          setIsLoading(false)
+          // Use Vapi TTS to play the AI response
+          const vapi = getVapiInstance()
+          if (vapi && typeof vapi.say === 'function') {
+            vapi.say(data.response)
+          }
+        })
+        .catch(err => {
+          setMessages(prev => prev.map(msg =>
+            msg.id === userMessage.id ? { ...msg, status: 'error' } : msg
+          ))
+          setIsTyping(false)
+          setIsLoading(false)
+        })
+      clearTranscript()
+    }
+  }, [transcript, isVapiEnabled, getVapiInstance, clearTranscript])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -202,7 +255,11 @@ export default function ChatInterface() {
   const handleVoiceToggle = async () => {
     try {
       clearError()
-      await toggleRecording()
+      if (isVapiEnabled) {
+        await startVapiConversation()
+      } else {
+        await toggleRecording()
+      }
     } catch (error) {
       console.error('Voice toggle error:', error)
     }
