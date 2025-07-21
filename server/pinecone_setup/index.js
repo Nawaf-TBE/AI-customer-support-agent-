@@ -583,6 +583,42 @@ async function healthCheck() {
   }
 }
 
+/**
+ * Query Pinecone index for top-k most similar vectors
+ * @param {number[]} embedding - The embedding vector to search with
+ * @param {number} topK - Number of top results to return
+ * @param {string} indexName - (optional) Index name to use
+ * @returns {Promise<Array>} Array of matched vectors with metadata
+ */
+async function queryPinecone(embedding, topK = 5, indexName = CONFIG.INDEX_NAME) {
+  try {
+    if (!pineconeIndex) {
+      await initializeIndex(indexName);
+    }
+    if (!embedding || !Array.isArray(embedding)) {
+      throw new PineconeError('Invalid embedding for query', 'INVALID_EMBEDDING');
+    }
+    const queryRequest = {
+      vector: embedding,
+      topK,
+      includeMetadata: true
+    };
+    const queryResponse = await pineconeIndex.query({
+      ...queryRequest
+    });
+    if (!queryResponse.matches) {
+      throw new PineconeError('No matches found in Pinecone query', 'NO_MATCHES');
+    }
+    return queryResponse.matches;
+  } catch (error) {
+    throw new PineconeError(
+      'Failed to query Pinecone index',
+      'QUERY_ERROR',
+      error.message
+    );
+  }
+}
+
 module.exports = {
   initializePinecone,
   initializeOpenAI,
@@ -596,5 +632,6 @@ module.exports = {
   getIndexStats,
   healthCheck,
   PineconeError,
-  CONFIG
+  CONFIG,
+  queryPinecone
 }; 
