@@ -12,6 +12,7 @@
   "type": "commonjs",
   "dependencies": {
     "@pinecone-database/pinecone": "^6.1.1",
+    "bad-words": "^4.0.0",
     "dotenv": "^17.2.0",
     "exa-js": "^1.8.20",
     "node-fetch": "^3.3.2",
