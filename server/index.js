@@ -40,7 +40,17 @@ function getOpenAIClient() {
   return openaiClient;
 }
 
-// RAG pipeline endpoint
+// Placeholder function for scheduling a meeting
+function scheduleMeeting(date, time) {
+  // Simulate checking a calendar (randomly available/unavailable)
+  if (!date || !time) return 'Invalid date or time.';
+  const unavailable = Math.random() < 0.2; // 20% chance unavailable
+  if (unavailable) {
+    return `Sorry, the slot on ${date} at ${time} is unavailable. Please choose another time.`;
+  }
+  return `Your meeting has been scheduled for ${date} at ${time}.`;
+}
+
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -78,12 +88,13 @@ app.post('/api/chat', async (req, res) => {
       }
     }
 
-    // 4. RAG pipeline (unchanged)
+    // 4. RAG pipeline with tool call instructions
     const [embedding] = await generateEmbeddings(message);
     const matches = await queryPinecone(embedding, 5, CONFIG.INDEX_NAME);
     const contextChunks = matches.map(match => match.metadata?.text || '').filter(Boolean);
     const contextText = contextChunks.map((chunk, i) => `Context ${i+1}:\n${chunk}`).join('\n\n');
-    const prompt = `You are a helpful AI customer support agent. Use the following context from the knowledge base to answer the user's question as comprehensively and helpfully as possible.\n\nContext:\n${contextText}\n\nUser message:\n${message}\n\nAnswer:`;
+    const toolInstructions = `\n\nIf the user wants to schedule a meeting, respond ONLY with a JSON object in the following format: {\"tool\": \"schedule_meeting\", \"date\": \"YYYY-MM-DD\", \"time\": \"HH:MM\"}. Otherwise, answer normally.`;
+    const prompt = `You are a helpful AI customer support agent. Use the following context from the knowledge base to answer the user's question as comprehensively and helpfully as possible.\n\nContext:\n${contextText}\n\nUser message:\n${message}${toolInstructions}\n\nAnswer:`;
     const openai = getOpenAIClient();
     const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_COMPLETION_MODEL || 'gpt-3.5-turbo',
@@ -98,6 +109,24 @@ app.post('/api/chat', async (req, res) => {
     if (prependDisclaimer) {
       aiResponse = advisoryDisclaimer + aiResponse;
     }
+
+    // Tool call detection
+    let toolCallResult = null;
+    try {
+      // Try to parse as JSON if it looks like a tool call
+      if (aiResponse.startsWith('{') && aiResponse.includes('"tool"')) {
+        const toolObj = JSON.parse(aiResponse);
+        if (toolObj.tool === 'schedule_meeting' && toolObj.date && toolObj.time) {
+          toolCallResult = scheduleMeeting(toolObj.date, toolObj.time);
+        }
+      }
+    } catch (err) {
+      // Not a tool call or invalid JSON, ignore
+    }
+    if (toolCallResult) {
+      aiResponse = toolCallResult;
+    }
+
     res.json({
       response: aiResponse,
       context: contextChunks,
