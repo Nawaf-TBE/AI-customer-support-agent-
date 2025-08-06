@@ -1,0 +1,84 @@
+# ========================================
+# AI Customer Support Agent - Environment Variables Template
+# ========================================
+# Copy this content to a new file named .env and fill in your actual API keys
+# DO NOT commit the .env file to version control (it's in .gitignore)
+
+# ========================================
+# CORE AI SERVICES
+# ========================================
+
+# OpenAI API Key (Required for embeddings and LLM responses)
+# Get from: https://platform.openai.com/api-keys
+OPENAI_API_KEY=sk-your_openai_api_key_here
+
+# OpenAI Model for completions (optional, defaults to gpt-3.5-turbo)
+OPENAI_COMPLETION_MODEL=gpt-3.5-turbo
+
+# Pinecone API Key (Required for vector search/RAG)
+# Get from: https://app.pinecone.io/
+PINECONE_API_KEY=your_pinecone_api_key_here
+
+# ========================================
+# VOICE SERVICES
+# ========================================
+
+# Vapi Public Key (Required for voice-to-text and text-to-speech)
+# Get from: https://vapi.ai/
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=your_vapi_public_key_here
+
+# ========================================
+# DATA SCRAPING (Optional)
+# ========================================
+
+# Exa.ai API Key (For scraping Aven support data)
+# Get from: https://exa.ai/
+EXA_API_KEY=your_exa_api_key_here
+
+# ========================================
+# SCRAPING CONFIGURATION
+# ========================================
+
+# Output directory for scraped data
+OUTPUT_DIR=./scraped_data
+
+# Logging level
+LOG_LEVEL=INFO
+
+# Scraping limits
+MAX_SUBPAGES=50
+REQUESTS_PER_MINUTE=30
+MAX_RETRIES=3
+TIMEOUT_SECONDS=30
+
+# Content processing
+CHUNK_SIZE=1000
+OVERLAP_SIZE=100
+MIN_CHUNK_SIZE=100
+
+# Save raw HTML (true/false)
+SAVE_RAW_HTML=false
+
+# ========================================
+# DOCKER CONFIGURATION
+# ========================================
+
+# Port for the server (default: 3001)
+PORT=3001
+
+# ========================================
+# DEMO NOTES
+# ========================================
+# 
+# To get your API keys:
+# 1. OpenAI: https://platform.openai.com/api-keys
+# 2. Pinecone: https://app.pinecone.io/
+# 3. Vapi: https://vapi.ai/
+# 4. Exa: https://exa.ai/
+#
+# After setting up this file:
+# 1. Run: docker-compose down
+# 2. Run: docker-compose up --build
+# 3. Visit: http://localhost:3000
+#
+# ======================================== 

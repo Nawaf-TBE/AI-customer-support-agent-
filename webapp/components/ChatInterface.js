@@ -165,19 +165,19 @@ export default function ChatInterface() {
       */
       
       // Mock response for demo (remove when implementing real API)
-      setTimeout(() => {
-        const aiResponse = {
-          id: Date.now() + 1,
-          type: 'ai',
-          content: generateMockResponse(userMessage.content),
+    setTimeout(() => {
+      const aiResponse = {
+        id: Date.now() + 1,
+        type: 'ai',
+        content: generateMockResponse(userMessage.content),
           timestamp: new Date(),
           status: 'delivered'
-        }
-        
-        setMessages(prev => [...prev, aiResponse])
-        setIsTyping(false)
-        setIsLoading(false)
-      }, 1500 + Math.random() * 1000) // Simulate variable response time
+      }
+      
+      setMessages(prev => [...prev, aiResponse])
+      setIsTyping(false)
+      setIsLoading(false)
+    }, 1500 + Math.random() * 1000) // Simulate variable response time
       
     } catch (error) {
       console.error('Error getting AI response:', error)
@@ -258,7 +258,7 @@ export default function ChatInterface() {
       if (isVapiEnabled) {
         await startVapiConversation()
       } else {
-        await toggleRecording()
+      await toggleRecording()
       }
     } catch (error) {
       console.error('Voice toggle error:', error)
@@ -302,8 +302,8 @@ export default function ChatInterface() {
               <RotateCcw className="w-5 h-5" />
             </button>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-              <span className="text-sm text-gray-500">Online</span>
+            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+            <span className="text-sm text-gray-500">Online</span>
             </div>
           </div>
         </div>
@@ -339,8 +339,8 @@ export default function ChatInterface() {
                   message.type === 'user' ? 'justify-end' : 'justify-start'
                 }`}>
                   <span className={`text-xs text-gray-400`}>
-                    {formatTimestamp(message.timestamp)}
-                  </span>
+                  {formatTimestamp(message.timestamp)}
+                </span>
                   {message.type === 'user' && (
                     <span className={`text-xs message-status ${
                       message.status === 'sending' 
