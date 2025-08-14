@@ -1,83 +1,268 @@
-# Aven Support Page Scraper
+# AI Customer Support Agent
 
-A comprehensive scraping tool that uses Exa.ai's advanced capabilities to recursively crawl and extract content from Aven's support documentation.
+A comprehensive AI-powered customer support system featuring a modern chat interface, RAG (Retrieval-Augmented Generation) pipeline, voice capabilities, and intelligent guardrails.
 
-## Features
+## 🚀 Features
 
-- **Intelligent Crawling**: Uses Exa.ai's neural search and subpage crawling
-- **Content Processing**: Converts HTML to clean, structured text chunks
-- **Domain-Focused**: Stays within the support domain for targeted scraping
-- **Multiple Export Formats**: JSON, CSV, and Markdown output
-- **Rate Limiting**: Respects API limits with intelligent throttling
-- **Error Recovery**: Robust retry logic and error handling
-- **Metadata Extraction**: Captures titles, URLs, publication dates, and more
+### **Core AI Capabilities**
+- **RAG Pipeline**: Retrieves relevant context from knowledge base using Pinecone vector search
+- **Intelligent Responses**: Powered by OpenAI GPT models with context-aware answers
+- **Tool Integration**: Supports scheduling meetings and other automated actions
+- **Guardrails**: PII detection, toxicity filtering, and advisory disclaimers
 
-## Setup
+### **Voice Interface**
+- **Voice-to-Text**: Real-time speech recognition using Vapi AI
+- **Text-to-Speech**: AI responses spoken aloud for accessibility
+- **Dual Fallback**: Vapi AI with browser Speech Recognition as backup
 
-1. Install dependencies:
+### **Modern Web Interface**
+- **Responsive Design**: Works on desktop, tablet, and mobile
+- **Real-time Chat**: Live message status indicators and typing animations
+- **Professional UI**: Clean, modern interface with Tailwind CSS
+- **Accessibility**: ARIA labels, keyboard navigation, and screen reader support
+
+### **Production Ready**
+- **Docker Deployment**: Containerized services with Docker Compose
+- **Environment Management**: Secure API key configuration
+- **Error Handling**: Comprehensive error states and user feedback
+- **Scalable Architecture**: Microservices design for easy scaling
+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Webapp        │    │   Server        │    │   External      │
+│   (Next.js)     │◄──►│   (Express)     │◄──►│   Services      │
+│                 │    │                 │    │                 │
+│ • Chat UI       │    │ • RAG Pipeline  │    │ • OpenAI        │
+│ • Voice Input   │    │ • Guardrails    │    │ • Pinecone      │
+│ • TTS Output    │    │ • Tool Calls    │    │ • Vapi AI       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 🛠️ Quick Start
+
+### **Prerequisites**
+- Node.js 18+
+- Docker Desktop
+- API keys (see [Configuration](#configuration))
+
+### **1. Clone and Setup**
 ```bash
-pip install -r requirements.txt
+git clone <your-repo-url>
+cd AI-Customer-Support-Agent
 ```
 
-2. Configure your API key:
+### **2. Configure Environment**
 ```bash
-cp config.template .env
-# Edit .env and add your Exa.ai API key
+# Copy the environment template
+cp env-template.txt .env
+
+# Edit .env with your API keys
+nano .env
 ```
 
-3. Run the scraper:
+### **3. Start Services**
 ```bash
-python aven_scraper.py
+# Build and start all services
+docker-compose up --build
+
+# Access the application
+open http://localhost:3000
 ```
 
-## Configuration
+## ⚙️ Configuration
 
-Edit the configuration in `.env` or pass parameters directly:
+### **Required API Keys**
 
-- `EXA_API_KEY`: Your Exa.ai API key
-- `MAX_SUBPAGES`: Maximum pages to crawl (default: 50)
-- `REQUESTS_PER_MINUTE`: Rate limiting (default: 30)
-- `CHUNK_SIZE`: Text chunk size for processing (default: 1000)
-- `OUTPUT_DIR`: Directory for scraped data (default: ./scraped_data)
+| Service | Purpose | Get Key |
+|---------|---------|---------|
+| **OpenAI** | AI responses & embeddings | [OpenAI Platform](https://platform.openai.com/api-keys) |
+| **Pinecone** | Vector search (RAG) | [Pinecone Console](https://app.pinecone.io/) |
+| **Vapi** | Voice features | [Vapi.ai](https://vapi.ai/) |
+| **Exa** | Data scraping (optional) | [Exa.ai](https://exa.ai/) |
 
-## Output Structure
+### **Environment Variables**
+```bash
+# Core AI Services
+OPENAI_API_KEY=sk-your_openai_api_key_here
+OPENAI_COMPLETION_MODEL=gpt-3.5-turbo
+PINECONE_API_KEY=your_pinecone_api_key_here
 
-```
-scraped_data/
-├── aven_support_raw.json          # Raw scraped data
-├── aven_support_processed.json    # Processed text chunks
-├── aven_support_summary.csv       # Summary statistics
-└── content_chunks/                # Individual markdown files
-    ├── page_001.md
-    ├── page_002.md
-    └── ...
-```
+# Voice Services
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=your_vapi_public_key_here
 
-## Usage Examples
-
-### Basic Usage
-```python
-from aven_scraper import AvenScraper
-
-scraper = AvenScraper(api_key="your_exa_key")
-results = scraper.scrape_support_pages()
+# Data Scraping (Optional)
+EXA_API_KEY=your_exa_api_key_here
 ```
 
-### Advanced Configuration
-```python
-scraper = AvenScraper(
-    api_key="your_exa_key",
-    max_subpages=100,
-    chunk_size=1500,
-    target_content=["faq", "guide", "tutorial", "help"]
-)
-results = scraper.scrape_support_pages()
+## 🎯 Demo Setup
+
+### **1. Prepare Your Environment**
+```bash
+# Ensure all services are running
+docker-compose up -d
+
+# Check service status
+docker-compose ps
 ```
 
-## API Integration
+### **2. Test Core Features**
+- **Text Chat**: Type questions about Aven support
+- **Voice Input**: Click microphone and speak
+- **Tool Calls**: Try "schedule a meeting for tomorrow at 2pm"
+- **Guardrails**: Test with email addresses or inappropriate content
 
-This tool leverages Exa.ai's powerful features:
-- **Neural Search**: Semantic content discovery
-- **Subpage Crawling**: Recursive link following
-- **Content Extraction**: Clean HTML-to-text conversion
-- **Domain Filtering**: Targeted scraping within support domains 
+### **3. Demo Script**
+```
+1. Introduction (10s)
+   "This is our AI Customer Support Agent"
+
+2. Text Chat (30s)
+   - Ask: "How do I reset my password?"
+   - Show AI response with context
+
+3. Voice Features (30s)
+   - Click mic, speak: "How do I check my balance?"
+   - Show TTS response
+
+4. Tool Integration (20s)
+   - Ask: "Schedule a meeting for Friday at 3pm"
+   - Show confirmation
+
+5. Guardrails (10s)
+   - Try: "My email is john@example.com"
+   - Show PII protection
+```
+
+## 📁 Project Structure
+
+```
+AI-Customer-Support-Agent/
+├── webapp/                    # Next.js frontend
+│   ├── components/           # React components
+│   │   ├── ChatInterface.js  # Main chat UI
+│   │   └── useVoiceInput.js  # Voice input hook
+│   ├── pages/               # Next.js pages
+│   └── styles/              # CSS and styling
+├── server/                   # Express backend
+│   ├── index.js             # Main server with RAG pipeline
+│   ├── pinecone_setup/      # Vector database utilities
+│   └── eval_rag.js          # Evaluation and testing
+├── scraped_data/            # Knowledge base data
+├── docker-compose.yml       # Service orchestration
+├── env-template.txt         # Environment configuration
+└── README.md               # This file
+```
+
+## 🔧 Development
+
+### **Local Development**
+```bash
+# Start webapp in development mode
+cd webapp
+npm install
+npm run dev
+
+# Start server in development mode
+cd server
+npm install
+node index.js
+```
+
+### **Testing**
+```bash
+# Run RAG evaluation
+cd server
+node eval_rag.js
+
+# Test API endpoints
+curl -X POST http://localhost:3001/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "How do I reset my password?"}'
+```
+
+### **Building for Production**
+```bash
+# Build all services
+docker-compose build
+
+# Deploy to production
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 🛡️ Security & Guardrails
+
+### **PII Detection**
+- Automatically detects and blocks email addresses and phone numbers
+- Returns standardized privacy warning messages
+
+### **Toxicity Filtering**
+- Uses `bad-words` library for content filtering
+- Blocks inappropriate or offensive content
+
+### **Advisory Disclaimers**
+- Detects legal/financial advice requests
+- Automatically prepends appropriate disclaimers
+
+### **Environment Security**
+- API keys stored in `.env` (not committed to git)
+- Docker secrets for production deployments
+
+## 📊 Evaluation & Monitoring
+
+### **RAG Pipeline Evaluation**
+```bash
+# Run comprehensive evaluation
+cd server
+node eval_rag.js
+
+# View results
+cat rag_eval_results.json
+```
+
+### **Metrics Tracked**
+- **Accuracy**: Keyword presence in responses
+- **Helpfulness**: Response quality scoring
+- **Citation Quality**: Context relevance
+- **Response Time**: Performance monitoring
+
+## 🚀 Deployment
+
+### **Docker Deployment**
+```bash
+# Production deployment
+docker-compose -f docker-compose.prod.yml up -d
+
+# Scale services
+docker-compose up -d --scale webapp=3
+```
+
+### **Cloud Deployment**
+- **Vercel**: Deploy webapp with `vercel --prod`
+- **Railway**: Full-stack deployment
+- **AWS ECS**: Container orchestration
+- **Google Cloud Run**: Serverless containers
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For issues and questions:
+- Check the [Issues](https://github.com/your-repo/issues) page
+- Review the [Documentation](docs/)
+- Contact the development team
+
+---
+
+**Built with ❤️ using Next.js, Express, OpenAI, Pinecone, and Vapi AI** 
