@@ -1,5 +1,11 @@
 # AI Customer Support Agent
 
+<!-- 
+  🎯 Ready for Demo: This project is fully configured and ready for presentation
+  🚀 Features: RAG pipeline, voice interface, guardrails, and tool integration
+  📚 Documentation: Complete setup and deployment instructions included
+-->
+
 A comprehensive AI-powered customer support system featuring a modern chat interface, RAG (Retrieval-Augmented Generation) pipeline, voice capabilities, and intelligent guardrails.
 
 ## 🚀 Features
