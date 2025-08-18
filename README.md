@@ -8,6 +8,8 @@
   🐳 Deployment: Docker containers ready for production use
   🧪 Testing: Comprehensive RAG evaluation and testing framework included
   📊 Metrics: Performance monitoring and quality assessment tools ready
+  🎤 Voice: Advanced voice-to-text and text-to-speech with Vapi AI
+  ♿ Accessibility: Full keyboard navigation and screen reader support
 -->
 
 A comprehensive AI-powered customer support system featuring a modern chat interface, RAG (Retrieval-Augmented Generation) pipeline, voice capabilities, and intelligent guardrails.
