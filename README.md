@@ -10,6 +10,8 @@
   📊 Metrics: Performance monitoring and quality assessment tools ready
   🎤 Voice: Advanced voice-to-text and text-to-speech with Vapi AI
   ♿ Accessibility: Full keyboard navigation and screen reader support
+  🚢 Production: Multi-stage Docker builds and orchestrated deployment
+  🔄 CI/CD: Ready for automated testing and deployment pipelines
 -->
 
 A comprehensive AI-powered customer support system featuring a modern chat interface, RAG (Retrieval-Augmented Generation) pipeline, voice capabilities, and intelligent guardrails.
