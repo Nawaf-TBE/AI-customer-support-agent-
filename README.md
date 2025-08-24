@@ -12,6 +12,8 @@
   ♿ Accessibility: Full keyboard navigation and screen reader support
   🚢 Production: Multi-stage Docker builds and orchestrated deployment
   🔄 CI/CD: Ready for automated testing and deployment pipelines
+  🧪 Quality: 50+ evaluation questions with accuracy, helpfulness, and citation scoring
+  📈 Analytics: Comprehensive performance metrics and response quality assessment
 -->
 
 A comprehensive AI-powered customer support system featuring a modern chat interface, RAG (Retrieval-Augmented Generation) pipeline, voice capabilities, and intelligent guardrails.
