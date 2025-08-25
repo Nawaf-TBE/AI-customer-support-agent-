@@ -14,6 +14,8 @@
   🔄 CI/CD: Ready for automated testing and deployment pipelines
   🧪 Quality: 50+ evaluation questions with accuracy, helpfulness, and citation scoring
   📈 Analytics: Comprehensive performance metrics and response quality assessment
+  🛡️ Compliance: PII detection, toxicity filtering, and advisory disclaimers
+  🔒 Privacy: Secure data handling with no sensitive information exposure
 -->
 
 A comprehensive AI-powered customer support system featuring a modern chat interface, RAG (Retrieval-Augmented Generation) pipeline, voice capabilities, and intelligent guardrails.
