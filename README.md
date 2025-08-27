@@ -18,6 +18,8 @@
   🔒 Privacy: Secure data handling with no sensitive information exposure
   📈 Scalability: Horizontal scaling support with load balancing capabilities
   🏢 Enterprise: Multi-tenant architecture and enterprise-grade security
+  📊 Monitoring: Real-time performance tracking and alerting systems
+  🔍 Observability: Comprehensive logging and debugging capabilities
 -->
 
 A comprehensive AI-powered customer support system featuring a modern chat interface, RAG (Retrieval-Augmented Generation) pipeline, voice capabilities, and intelligent guardrails.
