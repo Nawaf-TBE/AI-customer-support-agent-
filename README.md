@@ -30,6 +30,11 @@ A comprehensive AI-powered customer support system featuring a modern chat inter
 
 ## 🚀 Features
 
+### **Deployment Status**
+- **✅ GitHub Repository**: Successfully deployed to [AI Customer Support Agent](https://github.com/Nawaf-TBE/AI-customer-support-agent-)
+- **✅ Production Ready**: Docker containers configured and tested
+- **✅ MLH Fellowship Ready**: Complete codebase with comprehensive documentation
+
 ### **Core AI Capabilities**
 - **RAG Pipeline**: Retrieves relevant context from knowledge base using Pinecone vector search
 - **Intelligent Responses**: Powered by OpenAI GPT models with context-aware answers
