@@ -1,15 +1,27 @@
-exa-py>=1.0.0
-requests>=2.31.0
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
-python-dotenv>=1.0.0
-pandas>=2.0.0
-tqdm>=4.66.0
-aiohttp>=3.8.0
-asyncio-throttle>=1.0.0
-html2text>=2020.1.16
-markdownify>=0.11.6
-click>=8.1.0
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-tenacity>=8.2.0 
+# AI Customer Support Agent - Python Dependencies
+# Web scraping and data processing requirements for knowledge base construction
+
+# Core web scraping and search
+exa-py>=1.0.0              # Intelligent web search and content discovery
+requests>=2.31.0           # HTTP client for API calls and web requests
+beautifulsoup4>=4.12.0     # HTML parsing for web content extraction
+lxml>=4.9.0                # Fast XML and HTML parser
+html2text>=2020.1.16       # Convert HTML to clean markdown text
+markdownify>=0.11.6        # HTML to Markdown conversion utility
+
+# Environment and configuration
+python-dotenv>=1.0.0       # Load environment variables from .env files
+pydantic>=2.0.0            # Data validation and settings management
+pydantic-settings>=2.0.0   # Enhanced settings management with Pydantic
+
+# Data processing and analysis
+pandas>=2.0.0              # Data manipulation and CSV processing
+tqdm>=4.66.0               # Progress bars for long-running operations
+
+# Async operations and reliability
+aiohttp>=3.8.0             # Asynchronous HTTP client for concurrent requests
+asyncio-throttle>=1.0.0    # Rate limiting for async operations
+tenacity>=8.2.0            # Retry logic with exponential backoff
+
+# CLI interface
+click>=8.1.0               # Command-line interface framework 
