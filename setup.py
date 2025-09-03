@@ -1,6 +1,29 @@
 #!/usr/bin/env python3
 """
-Setup script for Aven Support Scraper
+Setup script for AI Customer Support Agent - Aven Support Scraper
+
+This automated setup script configures the entire development environment for the
+AI Customer Support Agent project, including dependency installation, environment
+configuration, and directory structure creation.
+
+Features:
+- Automated Python dependency installation from requirements.txt
+- Environment file creation and API key configuration
+- Directory structure setup for scraped data and content processing
+- Comprehensive installation verification and health checks
+- User-friendly guided setup with visual feedback
+
+Usage:
+    python setup.py
+
+Requirements:
+- Python 3.8+
+- pip package manager
+- Internet connection for dependency downloads
+- Exa.ai API key (optional, can be configured later)
+
+Author: AI Customer Support Agent Development Team
+License: MIT
 """
 import os
 import sys
@@ -8,6 +31,12 @@ import subprocess
 from pathlib import Path
 
 def print_banner():
+    """
+    Display a welcome banner for the setup process.
+    
+    Provides visual feedback to users that the setup process has started
+    and identifies the project and key technology stack.
+    """
     print("""
 ╔══════════════════════════════════════════════════════════════╗
 ║                Aven Support Scraper Setup                   ║
@@ -16,7 +45,22 @@ def print_banner():
 """)
 
 def install_dependencies():
-    """Install required Python packages"""
+    """
+    Install required Python packages from requirements.txt.
+    
+    Uses pip to install all dependencies specified in requirements.txt, including:
+    - exa-py for intelligent web search
+    - beautifulsoup4 for HTML parsing
+    - pandas for data processing
+    - aiohttp for async web requests
+    - pydantic for configuration management
+    
+    Returns:
+        bool: True if installation successful, False otherwise
+    
+    Raises:
+        subprocess.CalledProcessError: If pip installation fails
+    """
     print("📦 Installing dependencies...")
     
     try:
@@ -70,7 +114,20 @@ def create_env_file():
     return True
 
 def create_directories():
-    """Create necessary directories"""
+    """
+    Create necessary directory structure for the AI Customer Support Agent.
+    
+    Sets up the complete directory hierarchy needed for data processing:
+    - scraped_data/: Main output directory for all scraped content
+    - scraped_data/content_chunks/: Individual markdown chunks for RAG pipeline
+    - scraped_data/by_content_type/: Content organized by type (FAQ, guides, etc.)
+    
+    All directories are created with parents=True to handle nested structures
+    and exist_ok=True to avoid errors if directories already exist.
+    
+    Returns:
+        bool: Always returns True (directory creation is idempotent)
+    """
     print("\n📁 Creating directories...")
     
     directories = [
