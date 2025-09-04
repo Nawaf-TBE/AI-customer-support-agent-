@@ -1,5 +1,33 @@
 """
-Data export utilities for Aven scraper results
+Data Export Utilities for AI Customer Support Agent
+
+This module provides comprehensive data export functionality for the Aven support
+scraper results, enabling multiple output formats optimized for different use cases
+in the AI Customer Support Agent pipeline.
+
+Key Features:
+- Multi-format exports (JSON, CSV, Parquet, Markdown) for maximum compatibility
+- Content organization by type (FAQ, guides, troubleshooting, etc.)
+- Search index generation for rapid content discovery
+- Comprehensive reporting and analytics
+- RAG pipeline optimization with chunked content export
+
+Export Formats Supported:
+- JSONL: Line-delimited JSON for streaming and big data processing
+- Parquet: Columnar format for efficient analytics and data science workflows
+- CSV: Structured tabular data for spreadsheet analysis
+- Markdown: Human-readable documentation organized by content type
+- Search Index: JSON-based keyword index for fast content lookup
+
+Integration Points:
+- Pinecone vector database ingestion via structured JSON exports
+- RAG pipeline content chunks for AI model training and retrieval
+- Analytics dashboards via CSV and Parquet exports
+- Documentation generation via organized Markdown outputs
+
+Author: AI Customer Support Agent Development Team
+License: MIT
+Version: 1.0.0
 """
 import json
 import csv
@@ -13,14 +41,71 @@ import logging
 logger = logging.getLogger(__name__)
 
 class DataExporter:
-    """Enhanced data export functionality"""
+    """
+    Enhanced data export functionality for AI Customer Support Agent.
+    
+    This class provides a comprehensive suite of export methods to transform
+    scraped support content into various formats optimized for different
+    downstream applications including RAG pipelines, analytics, and documentation.
+    
+    The exporter handles content chunking, metadata preservation, and format
+    optimization to ensure maximum compatibility with ML/AI workflows and
+    traditional data analysis tools.
+    
+    Attributes:
+        output_dir (Path): Base directory for all exported files
+        
+    Export Methods:
+        - export_to_jsonl(): Line-delimited JSON for big data processing
+        - export_to_parquet(): Columnar format for analytics
+        - export_structured_csv(): Comprehensive CSV with all metadata
+        - export_content_by_type(): Organized Markdown by content category
+        - create_search_index(): Keyword-based search functionality
+        - create_summary_report(): Analytics and session reporting
+    """
     
     def __init__(self, output_dir: str = "./scraped_data"):
+        """
+        Initialize the DataExporter with output directory configuration.
+        
+        Args:
+            output_dir (str): Directory path for exported files. Creates directory
+                            if it doesn't exist. Defaults to "./scraped_data"
+        """
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
     
     def export_to_jsonl(self, chunks: List[Dict[str, Any]], filename: str = "aven_chunks.jsonl"):
-        """Export chunks to JSONL format (one JSON object per line)"""
+        """
+        Export content chunks to JSONL format for big data and streaming applications.
+        
+        JSONL (JSON Lines) format stores each chunk as a separate JSON object on its
+        own line, making it ideal for streaming processing, Pinecone vector database
+        ingestion, and distributed computing frameworks like Apache Spark.
+        
+        This format is particularly well-suited for:
+        - RAG pipeline data ingestion
+        - Vector database bulk uploads
+        - Streaming data processing
+        - Large dataset handling with memory efficiency
+        
+        Args:
+            chunks (List[Dict[str, Any]]): Processed content chunks with metadata
+            filename (str): Output filename, defaults to "aven_chunks.jsonl"
+            
+        Returns:
+            str: Absolute path to the exported JSONL file
+            
+        Example chunk structure:
+            {
+                "chunk_id": "url_chunk_001",
+                "content": "FAQ content...",
+                "source_url": "https://aven.com/support/faq",
+                "content_type": "faq",
+                "word_count": 150,
+                "keywords": ["password", "reset", "login"]
+            }
+        """
         filepath = self.output_dir / filename
         
         with open(filepath, 'w', encoding='utf-8') as f:
@@ -246,7 +331,39 @@ class DataExporter:
         return str(filepath)
     
     def export_all_formats(self, results: Dict[str, Any]) -> Dict[str, str]:
-        """Export results in all available formats"""
+        """
+        Export scraped results in all available formats for comprehensive coverage.
+        
+        This master export method generates the complete suite of output formats,
+        providing maximum flexibility for downstream applications. Each format is
+        optimized for specific use cases within the AI Customer Support Agent pipeline.
+        
+        Generated Outputs:
+        - JSONL: For RAG pipeline and vector database ingestion
+        - Structured CSV: For spreadsheet analysis and data science workflows  
+        - Parquet: For high-performance analytics and big data processing
+        - Content by Type: Organized Markdown files for human review
+        - Search Index: Keyword-based content discovery system
+        - URL Sitemap: Complete list of processed URLs
+        - Summary Report: Comprehensive analytics and session statistics
+        
+        This method ensures data accessibility across different technical skill levels
+        and application requirements, from AI/ML workflows to business analysis.
+        
+        Args:
+            results (Dict[str, Any]): Complete scraping session results including
+                                    chunks, metadata, URLs, and session statistics
+                                    
+        Returns:
+            Dict[str, str]: Mapping of format names to exported file paths
+                          Keys: 'jsonl', 'structured_csv', 'parquet', 'sitemap', 
+                               'report', 'search_index', plus content type files
+                               
+        Example:
+            exported = exporter.export_all_formats(scraping_results)
+            print(f"RAG data ready at: {exported['jsonl']}")
+            print(f"Analytics data at: {exported['structured_csv']}")
+        """
         logger.info("Exporting results in all formats...")
         
         chunks = results.get('chunks', [])
