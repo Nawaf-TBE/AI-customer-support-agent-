@@ -1,5 +1,5 @@
 """
-Configuration module for Aven Support Scraper
+Configuration module for Aven Support Scraper - handles environment variables and application settings
 """
 import os
 from typing import List, Optional
@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class ScrapingConfig(BaseSettings):
-    """Configuration for the Aven support scraper"""
+    """ Configuration for the Aven support scraper"""
     
     # API Configuration
     exa_api_key: str = Field(..., env="EXA_API_KEY")
@@ -93,3 +93,5 @@ def validate_config():
         raise ValueError(f"overlap_size ({config.overlap_size}) must be < chunk_size ({config.chunk_size})")
     
     return True 
+
+# TODO: add description
