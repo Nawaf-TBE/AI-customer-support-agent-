@@ -1,5 +1,5 @@
 """
-Configuration module for Aven Support Scraper - handles environment variables and application settings
+ Configuration module for Aven Support Scraper ...TODO: add description
 """
 import os
 from typing import List, Optional
