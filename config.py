@@ -1,10 +1,5 @@
-
-
 """
-Configuration module for Aven Support Scraper.
-
-This module provides configuration settings for the AI Customer Support Agent
-scraping system, including API keys, scraping parameters, and output settings.
+ Configuration module for Aven Support Scraper ...TODO: add description
 """
 import os
 from typing import List, Optional
@@ -99,4 +94,4 @@ def validate_config():
     
     return True 
 
-# Configuration validation complete
+# TODO: add description
