@@ -1,5 +1,6 @@
 """
- Configuration module for Aven Support Scraper ...TODO: add description
+Configuration module for Aven Support Scraper
+Handles all configuration settings for web scraping and data processing
 """
 import os
 from typing import List, Optional
