@@ -95,4 +95,4 @@ def validate_config():
     
     return True 
 
-# TODO: add description
+# Configuration module ready for use
