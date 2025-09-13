@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class ScrapingConfig(BaseSettings):
-    """ Configuration for the Aven support scraper"""
+    """Configuration for the Aven support scraper."""
     
     # API Configuration
     exa_api_key: str = Field(..., env="EXA_API_KEY")
