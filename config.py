@@ -11,7 +11,7 @@ except ImportError:
     from pydantic import BaseSettings, Field
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from .env file
 load_dotenv()
 
 class ScrapingConfig(BaseSettings):
