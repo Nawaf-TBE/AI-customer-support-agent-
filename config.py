@@ -18,7 +18,7 @@ class ScrapingConfig(BaseSettings):
     """Configuration for the Aven support scraper."""
     
     # API Configuration
-    exa_api_key: str = Field(..., env="EXA_API_KEY")
+    exa_api_key: str = Field(..., env="EXA_API_KEY")  # Required API key for Exa.ai service
     
     # Target Configuration
     base_url: str = "https://www.aven.com/support"
