@@ -21,7 +21,7 @@ class ScrapingConfig(BaseSettings):
     exa_api_key: str = Field(..., env="EXA_API_KEY")  # Required API key for Exa.ai service
     
     # Target Configuration
-    base_url: str = "https://www.aven.com/support"
+    base_url: str = "https://www.aven.com/support"  # Main URL to scrape
     domain: str = "aven.com"
     
     # Scraping Parameters
