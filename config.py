@@ -11,17 +11,17 @@ except ImportError:
     from pydantic import BaseSettings, Field
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 class ScrapingConfig(BaseSettings):
     """Configuration for the Aven support scraper."""
     
     # API Configuration
-    exa_api_key: str = Field(..., env="EXA_API_KEY")  # Required API key for Exa.ai service
+    exa_api_key: str = Field(..., env="EXA_API_KEY")
     
     # Target Configuration
-    base_url: str = "https://www.aven.com/support"  # Main URL to scrape
+    base_url: str = "https://www.aven.com/support"
     domain: str = "aven.com"
     
     # Scraping Parameters
