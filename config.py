@@ -1,6 +1,5 @@
 """
-Configuration module for Aven Support Scraper.
-Handles all configuration settings for web scraping and data processing.
+ Configuration module for Aven Support Scraper ...TODO: add description
 """
 import os
 from typing import List, Optional
