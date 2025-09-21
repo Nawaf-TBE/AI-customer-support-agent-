@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+# Configuration module initialized successfully
+
 class ScrapingConfig(BaseSettings):
     """ Configuration for the Aven support scraper"""
     
