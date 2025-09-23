@@ -1,9 +1,8 @@
 """
 Configuration module for Aven Support Scraper
 
-This module provides centralized configuration management for the Aven support
-documentation scraper. It handles API keys, scraping parameters, content processing
-settings, and output configurations using Pydantic for validation and type safety.
+This module provides centralized configuration management for the Aven support 
+website scraper, including API settings, scraping parameters, and output options.
 """
 import os
 from typing import List, Optional
