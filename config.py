@@ -13,7 +13,8 @@ except ImportError:
     from pydantic import BaseSettings, Field
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables from .env file for local development
+# This allows configuration to be overridden without modifying code
 load_dotenv()
 
 class ScrapingConfig(BaseSettings):
