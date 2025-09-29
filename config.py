@@ -66,7 +66,7 @@ class ScrapingConfig(BaseSettings):
         env_file = ".env"
         case_sensitive = False
 
-# Global configuration instance
+# Global configuration instance - initialized with environment variables and defaults
 config = ScrapingConfig()
 
 def get_output_paths():
