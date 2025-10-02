@@ -6,6 +6,7 @@ website scraper, including API settings, scraping parameters, and output options
 """
 import os
 from typing import List, Optional
+# Handle different pydantic versions - newer versions separate BaseSettings
 try:
     from pydantic_settings import BaseSettings
     from pydantic import Field
