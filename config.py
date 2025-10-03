@@ -6,7 +6,6 @@ website scraper, including API settings, scraping parameters, and output options
 """
 import os
 from typing import List, Optional
-# Handle different pydantic versions - newer versions separate BaseSettings
 try:
     from pydantic_settings import BaseSettings
     from pydantic import Field
@@ -67,7 +66,7 @@ class ScrapingConfig(BaseSettings):
         env_file = ".env"
         case_sensitive = False
 
-# Global configuration instance - initialized with environment variables and defaults
+# Global configuration instance
 config = ScrapingConfig()
 
 def get_output_paths():
