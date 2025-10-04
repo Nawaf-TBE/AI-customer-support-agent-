@@ -1,8 +1,5 @@
 """
-Configuration module for Aven Support Scraper
-
-This module provides centralized configuration management for the Aven support 
-website scraper, including API settings, scraping parameters, and output options.
+ Configuration module for Aven Support Scraper ...TODO: add description
 """
 import os
 from typing import List, Optional
