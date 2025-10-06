@@ -1,16 +1,5 @@
 """
-Configuration module for Aven Support Scraper
-
-This module provides centralized configuration management for the Aven support
-documentation scraper. It handles API keys, scraping parameters, content processing
-settings, and output configurations using Pydantic for validation and type safety.
-
-Key features:
-- Environment variable support with .env file loading
-- Configurable scraping limits and retry logic
-- Content chunking and processing parameters
-- Flexible output directory management
-- Built-in validation for critical settings
+ Configuration module for Aven Support Scraper ...TODO: add description
 """
 import os
 from typing import List, Optional
@@ -105,4 +94,4 @@ def validate_config():
     
     return True 
 
-# Configuration validation completed - ready for use
+# TODO: add description
