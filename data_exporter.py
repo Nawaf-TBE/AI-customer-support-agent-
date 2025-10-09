@@ -30,15 +30,119 @@ License: MIT
 Version: 1.0.0
 """
 import json
-import csv
-import os
-from typing import Dict, List, Any, Optional
-from datetime import datetime
-import pandas as pd
-from pathlib import Path
 import logging
+import os
+from dataclasses import dataclass, field
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Union
+
+import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+# Constants
+class ExportConstants:
+    """Constants used throughout data export operations"""
+    # Default filenames
+    DEFAULT_JSONL_FILENAME = "aven_chunks.jsonl"
+    DEFAULT_PARQUET_FILENAME = "aven_chunks.parquet"
+    DEFAULT_CSV_FILENAME = "aven_structured.csv"
+    DEFAULT_SITEMAP_FILENAME = "scraped_urls.txt"
+    DEFAULT_REPORT_FILENAME = "scraping_report.md"
+    DEFAULT_SEARCH_INDEX_FILENAME = "search_index.json"
+    
+    # Directory names
+    CONTENT_TYPE_SUBDIR = "by_content_type"
+    DEFAULT_OUTPUT_DIR = "./scraped_data"
+    
+    # Content processing
+    CONTENT_PREVIEW_LENGTH = 200
+    MAX_SIGNIFICANT_WORDS = 50
+    MIN_WORD_LENGTH = 3
+    
+    # File encoding
+    DEFAULT_ENCODING = 'utf-8'
+    
+    # Search index settings
+    DEFAULT_RELEVANCE_SCORE = 1.0
+    
+    # Text processing patterns
+    PUNCTUATION_CHARS = '.,!?;:"()[]{}'
+    
+    # Report formatting
+    DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+    
+    # CSV field names
+    CSV_FIELDS = [
+        'chunk_id', 'source_url', 'title', 'content_type', 'section_title',
+        'chunk_index', 'total_chunks', 'word_count', 'char_count', 
+        'keywords', 'content_preview', 'content_full'
+    ]
+
+# Custom Exceptions
+class DataExportError(Exception):
+    """Base exception for data export errors"""
+    pass
+
+class FileWriteError(DataExportError):
+    """Raised when file writing operations fail"""
+    pass
+
+class DataValidationError(DataExportError):
+    """Raised when input data validation fails"""
+    pass
+
+class FormatNotSupportedError(DataExportError):
+    """Raised when requested export format is not supported"""
+    pass
+
+class DirectoryCreationError(DataExportError):
+    """Raised when output directory creation fails"""
+    pass
+
+# Data Classes
+@dataclass
+class ExportResult:
+    """Result of an export operation"""
+    success: bool
+    file_path: Optional[str] = None
+    format_type: Optional[str] = None
+    record_count: int = 0
+    file_size_bytes: int = 0
+    error_message: Optional[str] = None
+    export_time: datetime = field(default_factory=datetime.now)
+    
+    @property
+    def file_size_mb(self) -> float:
+        """Get file size in megabytes"""
+        return self.file_size_bytes / (1024 * 1024) if self.file_size_bytes else 0.0
+
+@dataclass
+class ExportSummary:
+    """Summary of all export operations"""
+    total_exports: int = 0
+    successful_exports: int = 0
+    failed_exports: int = 0
+    total_records: int = 0
+    total_size_bytes: int = 0
+    export_results: List[ExportResult] = field(default_factory=list)
+    start_time: datetime = field(default_factory=datetime.now)
+    end_time: Optional[datetime] = None
+    
+    @property
+    def success_rate(self) -> float:
+        """Calculate success rate as percentage"""
+        if self.total_exports == 0:
+            return 0.0
+        return (self.successful_exports / self.total_exports) * 100
+    
+    @property
+    def duration_seconds(self) -> float:
+        """Calculate total duration in seconds"""
+        if self.end_time:
+            return (self.end_time - self.start_time).total_seconds()
+        return 0.0
 
 class DataExporter:
     """
@@ -54,6 +158,7 @@ class DataExporter:
     
     Attributes:
         output_dir (Path): Base directory for all exported files
+        export_summary (ExportSummary): Summary of all export operations
         
     Export Methods:
         - export_to_jsonl(): Line-delimited JSON for big data processing
@@ -64,18 +169,136 @@ class DataExporter:
         - create_summary_report(): Analytics and session reporting
     """
     
-    def __init__(self, output_dir: str = "./scraped_data"):
+    def __init__(self, output_dir: str = ExportConstants.DEFAULT_OUTPUT_DIR):
         """
         Initialize the DataExporter with output directory configuration.
         
         Args:
             output_dir (str): Directory path for exported files. Creates directory
                             if it doesn't exist. Defaults to "./scraped_data"
+                            
+        Raises:
+            DirectoryCreationError: If output directory cannot be created
+            ValueError: If output_dir is invalid
         """
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(exist_ok=True)
+        if not output_dir or not output_dir.strip():
+            raise ValueError("Output directory cannot be empty")
+            
+        try:
+            self.output_dir = Path(output_dir).resolve()
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+        except (OSError, PermissionError) as e:
+            raise DirectoryCreationError(f"Failed to create output directory '{output_dir}': {e}") from e
+            
+        self.export_summary = ExportSummary()
+        logger.info(f"DataExporter initialized with output directory: {self.output_dir}")
     
-    def export_to_jsonl(self, chunks: List[Dict[str, Any]], filename: str = "aven_chunks.jsonl"):
+    def _validate_chunks_data(self, chunks: List[Dict[str, Any]]) -> None:
+        """Validate chunks data structure
+        
+        Args:
+            chunks: List of chunk dictionaries to validate
+            
+        Raises:
+            DataValidationError: If chunks data is invalid
+        """
+        if not isinstance(chunks, list):
+            raise DataValidationError("Chunks must be a list")
+        
+        if not chunks:
+            logger.warning("Empty chunks list provided for export")
+            return
+            
+        # Validate first chunk structure as sample
+        sample_chunk = chunks[0]
+        required_fields = ['chunk_id', 'content', 'source_url']
+        
+        for field in required_fields:
+            if field not in sample_chunk:
+                raise DataValidationError(f"Required field '{field}' missing from chunk data")
+    
+    def _validate_results_data(self, results: Dict[str, Any]) -> None:
+        """Validate results data structure
+        
+        Args:
+            results: Results dictionary to validate
+            
+        Raises:
+            DataValidationError: If results data is invalid
+        """
+        if not isinstance(results, dict):
+            raise DataValidationError("Results must be a dictionary")
+        
+        if 'chunks' not in results:
+            raise DataValidationError("Results must contain 'chunks' key")
+            
+        self._validate_chunks_data(results['chunks'])
+    
+    def _get_file_size(self, filepath: Path) -> int:
+        """Get file size in bytes
+        
+        Args:
+            filepath: Path to the file
+            
+        Returns:
+            File size in bytes, 0 if file doesn't exist
+        """
+        try:
+            return filepath.stat().st_size if filepath.exists() else 0
+        except OSError:
+            return 0
+    
+    def _create_export_result(
+        self, 
+        success: bool, 
+        file_path: Optional[str] = None, 
+        format_type: Optional[str] = None,
+        record_count: int = 0,
+        error_message: Optional[str] = None
+    ) -> ExportResult:
+        """Create an ExportResult object
+        
+        Args:
+            success: Whether the export was successful
+            file_path: Path to the exported file
+            format_type: Type of export format
+            record_count: Number of records exported
+            error_message: Error message if export failed
+            
+        Returns:
+            ExportResult object
+        """
+        file_size = 0
+        if file_path and success:
+            file_size = self._get_file_size(Path(file_path))
+            
+        result = ExportResult(
+            success=success,
+            file_path=file_path,
+            format_type=format_type,
+            record_count=record_count,
+            file_size_bytes=file_size,
+            error_message=error_message
+        )
+        
+        # Update summary
+        self.export_summary.total_exports += 1
+        if success:
+            self.export_summary.successful_exports += 1
+            self.export_summary.total_records += record_count
+            self.export_summary.total_size_bytes += file_size
+        else:
+            self.export_summary.failed_exports += 1
+            
+        self.export_summary.export_results.append(result)
+        
+        return result
+    
+    def export_to_jsonl(
+        self, 
+        chunks: List[Dict[str, Any]], 
+        filename: str = ExportConstants.DEFAULT_JSONL_FILENAME
+    ) -> ExportResult:
         """
         Export content chunks to JSONL format for big data and streaming applications.
         
@@ -94,7 +317,11 @@ class DataExporter:
             filename (str): Output filename, defaults to "aven_chunks.jsonl"
             
         Returns:
-            str: Absolute path to the exported JSONL file
+            ExportResult: Result object containing export status and metadata
+            
+        Raises:
+            DataValidationError: If chunks data is invalid
+            FileWriteError: If file writing fails
             
         Example chunk structure:
             {
@@ -106,38 +333,138 @@ class DataExporter:
                 "keywords": ["password", "reset", "login"]
             }
         """
-        filepath = self.output_dir / filename
-        
-        with open(filepath, 'w', encoding='utf-8') as f:
-            for chunk in chunks:
-                json.dump(chunk, f, ensure_ascii=False)
-                f.write('\n')
-        
-        logger.info(f"Exported {len(chunks)} chunks to JSONL: {filepath}")
-        return str(filepath)
-    
-    def export_to_parquet(self, chunks: List[Dict[str, Any]], filename: str = "aven_chunks.parquet"):
-        """Export chunks to Parquet format for efficient storage and analysis"""
         try:
+            self._validate_chunks_data(chunks)
+            
+            if not filename or not filename.strip():
+                filename = ExportConstants.DEFAULT_JSONL_FILENAME
+                
             filepath = self.output_dir / filename
             
-            # Flatten the data for DataFrame
-            flattened_chunks = []
-            for chunk in chunks:
-                flat_chunk = chunk.copy()
-                # Convert list fields to strings for CSV compatibility
-                flat_chunk['keywords'] = ', '.join(chunk.get('keywords', []))
-                flattened_chunks.append(flat_chunk)
+            # Write JSONL file
+            self._write_jsonl_file(filepath, chunks)
             
+            logger.info(f"Exported {len(chunks)} chunks to JSONL: {filepath}")
+            return self._create_export_result(
+                success=True,
+                file_path=str(filepath),
+                format_type="jsonl",
+                record_count=len(chunks)
+            )
+            
+        except (DataValidationError, FileWriteError) as e:
+            logger.error(f"JSONL export failed: {e}")
+            return self._create_export_result(
+                success=False,
+                format_type="jsonl",
+                error_message=str(e)
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during JSONL export: {e}")
+            return self._create_export_result(
+                success=False,
+                format_type="jsonl",
+                error_message=f"Unexpected error: {str(e)}"
+            )
+    
+    def _write_jsonl_file(self, filepath: Path, chunks: List[Dict[str, Any]]) -> None:
+        """Write chunks to JSONL file
+        
+        Args:
+            filepath: Path to output file
+            chunks: List of chunks to write
+            
+        Raises:
+            FileWriteError: If file writing fails
+        """
+        try:
+            with open(filepath, 'w', encoding=ExportConstants.DEFAULT_ENCODING) as f:
+                for chunk in chunks:
+                    json.dump(chunk, f, ensure_ascii=False)
+                    f.write('\n')
+        except (OSError, IOError, PermissionError) as e:
+            raise FileWriteError(f"Failed to write JSONL file '{filepath}': {e}") from e
+    
+    def export_to_parquet(
+        self, 
+        chunks: List[Dict[str, Any]], 
+        filename: str = ExportConstants.DEFAULT_PARQUET_FILENAME
+    ) -> ExportResult:
+        """Export chunks to Parquet format for efficient storage and analysis
+        
+        Args:
+            chunks: List of chunk dictionaries to export
+            filename: Output filename for Parquet file
+            
+        Returns:
+            ExportResult: Result object containing export status and metadata
+            
+        Raises:
+            DataValidationError: If chunks data is invalid
+            FormatNotSupportedError: If PyArrow is not available
+            FileWriteError: If file writing fails
+        """
+        try:
+            self._validate_chunks_data(chunks)
+            
+            if not filename or not filename.strip():
+                filename = ExportConstants.DEFAULT_PARQUET_FILENAME
+                
+            filepath = self.output_dir / filename
+            
+            # Check if PyArrow is available
+            try:
+                import pyarrow
+            except ImportError:
+                raise FormatNotSupportedError("PyArrow not available for Parquet export")
+            
+            # Flatten and prepare data
+            flattened_chunks = self._flatten_chunks_for_tabular(chunks)
+            
+            # Create DataFrame and export
             df = pd.DataFrame(flattened_chunks)
             df.to_parquet(filepath, index=False)
             
             logger.info(f"Exported {len(chunks)} chunks to Parquet: {filepath}")
-            return str(filepath)
+            return self._create_export_result(
+                success=True,
+                file_path=str(filepath),
+                format_type="parquet",
+                record_count=len(chunks)
+            )
             
-        except ImportError:
-            logger.warning("PyArrow not available, skipping Parquet export")
-            return None
+        except (DataValidationError, FormatNotSupportedError, FileWriteError) as e:
+            logger.error(f"Parquet export failed: {e}")
+            return self._create_export_result(
+                success=False,
+                format_type="parquet",
+                error_message=str(e)
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during Parquet export: {e}")
+            return self._create_export_result(
+                success=False,
+                format_type="parquet",
+                error_message=f"Unexpected error: {str(e)}"
+            )
+    
+    def _flatten_chunks_for_tabular(self, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Flatten chunk data for tabular formats (CSV, Parquet)
+        
+        Args:
+            chunks: List of chunk dictionaries
+            
+        Returns:
+            List of flattened chunk dictionaries
+        """
+        flattened_chunks = []
+        for chunk in chunks:
+            flat_chunk = chunk.copy()
+            # Convert list fields to strings for tabular compatibility
+            if 'keywords' in flat_chunk and isinstance(flat_chunk['keywords'], list):
+                flat_chunk['keywords'] = ', '.join(flat_chunk['keywords'])
+            flattened_chunks.append(flat_chunk)
+        return flattened_chunks
     
     def export_content_by_type(self, results: Dict[str, Any], output_subdir: str = "by_content_type"):
         """Export content organized by content type"""
@@ -178,39 +505,166 @@ class DataExporter:
         
         return exported_files
     
-    def export_structured_csv(self, results: Dict[str, Any], filename: str = "aven_structured.csv"):
-        """Export a comprehensive CSV with all metadata"""
-        filepath = self.output_dir / filename
+    def export_structured_csv(
+        self, 
+        results: Dict[str, Any], 
+        filename: str = ExportConstants.DEFAULT_CSV_FILENAME
+    ) -> ExportResult:
+        """Export a comprehensive CSV with all metadata
         
+        Args:
+            results: Results dictionary containing chunks and metadata
+            filename: Output filename for CSV file
+            
+        Returns:
+            ExportResult: Result object containing export status and metadata
+            
+        Raises:
+            DataValidationError: If results data is invalid
+            FileWriteError: If file writing fails
+        """
+        try:
+            self._validate_results_data(results)
+            
+            if not filename or not filename.strip():
+                filename = ExportConstants.DEFAULT_CSV_FILENAME
+                
+            filepath = self.output_dir / filename
+            chunks = results.get('chunks', [])
+            
+            # Prepare CSV data
+            csv_data = self._prepare_csv_data(chunks)
+            
+            # Create DataFrame and export
+            df = pd.DataFrame(csv_data)
+            df.to_csv(filepath, index=False, encoding=ExportConstants.DEFAULT_ENCODING)
+            
+            logger.info(f"Exported structured CSV with {len(csv_data)} rows: {filepath}")
+            return self._create_export_result(
+                success=True,
+                file_path=str(filepath),
+                format_type="csv",
+                record_count=len(csv_data)
+            )
+            
+        except (DataValidationError, FileWriteError) as e:
+            logger.error(f"CSV export failed: {e}")
+            return self._create_export_result(
+                success=False,
+                format_type="csv",
+                error_message=str(e)
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during CSV export: {e}")
+            return self._create_export_result(
+                success=False,
+                format_type="csv",
+                error_message=f"Unexpected error: {str(e)}"
+            )
+    
+    def _prepare_csv_data(self, chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Prepare chunk data for CSV export
+        
+        Args:
+            chunks: List of chunk dictionaries
+            
+        Returns:
+            List of CSV row dictionaries
+        """
         csv_data = []
-        for chunk in results.get('chunks', []):
+        for chunk in chunks:
+            # Create content preview
+            content = chunk.get('content', '')
+            content_preview = (
+                content[:ExportConstants.CONTENT_PREVIEW_LENGTH] + '...' 
+                if len(content) > ExportConstants.CONTENT_PREVIEW_LENGTH 
+                else content
+            )
+            
             row = {
-                'chunk_id': chunk['chunk_id'],
-                'source_url': chunk['source_url'],
-                'title': chunk['title'],
-                'content_type': chunk['content_type'],
+                'chunk_id': chunk.get('chunk_id', ''),
+                'source_url': chunk.get('source_url', ''),
+                'title': chunk.get('title', ''),
+                'content_type': chunk.get('content_type', ''),
                 'section_title': chunk.get('section_title', ''),
-                'chunk_index': chunk['chunk_index'],
-                'total_chunks': chunk['total_chunks'],
-                'word_count': chunk['word_count'],
-                'char_count': chunk['char_count'],
+                'chunk_index': chunk.get('chunk_index', 0),
+                'total_chunks': chunk.get('total_chunks', 0),
+                'word_count': chunk.get('word_count', 0),
+                'char_count': chunk.get('char_count', 0),
                 'keywords': ', '.join(chunk.get('keywords', [])),
-                'content_preview': chunk['content'][:200] + '...' if len(chunk['content']) > 200 else chunk['content'],
-                'content_full': chunk['content']
+                'content_preview': content_preview,
+                'content_full': content
             }
             csv_data.append(row)
         
-        df = pd.DataFrame(csv_data)
-        df.to_csv(filepath, index=False, encoding='utf-8')
-        
-        logger.info(f"Exported structured CSV with {len(csv_data)} rows: {filepath}")
-        return str(filepath)
+        return csv_data
     
-    def create_search_index(self, chunks: List[Dict[str, Any]], filename: str = "search_index.json"):
-        """Create a simple search index for the content"""
-        filepath = self.output_dir / filename
+    def create_search_index(
+        self, 
+        chunks: List[Dict[str, Any]], 
+        filename: str = ExportConstants.DEFAULT_SEARCH_INDEX_FILENAME
+    ) -> ExportResult:
+        """Create a keyword-based search index for the content
         
-        # Create keyword-based search index
+        Args:
+            chunks: List of chunk dictionaries to index
+            filename: Output filename for search index
+            
+        Returns:
+            ExportResult: Result object containing export status and metadata
+            
+        Raises:
+            DataValidationError: If chunks data is invalid
+            FileWriteError: If file writing fails
+        """
+        try:
+            self._validate_chunks_data(chunks)
+            
+            if not filename or not filename.strip():
+                filename = ExportConstants.DEFAULT_SEARCH_INDEX_FILENAME
+                
+            filepath = self.output_dir / filename
+            
+            # Build search index
+            search_index = self._build_search_index(chunks)
+            
+            # Write index file
+            self._write_search_index_file(filepath, search_index)
+            
+            term_count = len(search_index['index'])
+            logger.info(f"Created search index with {term_count} terms: {filepath}")
+            
+            return self._create_export_result(
+                success=True,
+                file_path=str(filepath),
+                format_type="search_index",
+                record_count=term_count
+            )
+            
+        except (DataValidationError, FileWriteError) as e:
+            logger.error(f"Search index creation failed: {e}")
+            return self._create_export_result(
+                success=False,
+                format_type="search_index",
+                error_message=str(e)
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error during search index creation: {e}")
+            return self._create_export_result(
+                success=False,
+                format_type="search_index",
+                error_message=f"Unexpected error: {str(e)}"
+            )
+    
+    def _build_search_index(self, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Build search index from chunks
+        
+        Args:
+            chunks: List of chunk dictionaries
+            
+        Returns:
+            Search index dictionary
+        """
         search_index = {
             'created_at': datetime.now().isoformat(),
             'total_chunks': len(chunks),
@@ -218,44 +672,80 @@ class DataExporter:
         }
         
         for chunk in chunks:
-            chunk_id = chunk['chunk_id']
-            content = chunk['content'].lower()
+            chunk_id = chunk.get('chunk_id', '')
+            content = chunk.get('content', '').lower()
             title = chunk.get('title', '').lower()
             keywords = chunk.get('keywords', [])
             
             # Extract searchable terms
-            terms = set()
-            
-            # Add words from content (significant words only)
-            content_words = [word.strip('.,!?;:"()[]{}') for word in content.split()]
-            significant_words = [word for word in content_words 
-                               if len(word) > 3 and word.isalpha()]
-            terms.update(significant_words[:50])  # Limit to first 50 significant words
-            
-            # Add title words
-            title_words = [word.strip('.,!?;:"()[]{}') for word in title.split()]
-            terms.update(title_words)
-            
-            # Add keywords
-            terms.update([kw.lower().strip() for kw in keywords])
+            terms = self._extract_search_terms(content, title, keywords)
             
             # Add to index
             for term in terms:
                 if term not in search_index['index']:
                     search_index['index'][term] = []
+                    
                 search_index['index'][term].append({
                     'chunk_id': chunk_id,
-                    'url': chunk['source_url'],
+                    'url': chunk.get('source_url', ''),
                     'title': chunk.get('title', ''),
                     'content_type': chunk.get('content_type', ''),
-                    'relevance': 1.0  # Could implement TF-IDF scoring
+                    'relevance': ExportConstants.DEFAULT_RELEVANCE_SCORE
                 })
         
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(search_index, f, indent=2, ensure_ascii=False)
+        return search_index
+    
+    def _extract_search_terms(self, content: str, title: str, keywords: List[str]) -> set:
+        """Extract searchable terms from content
         
-        logger.info(f"Created search index with {len(search_index['index'])} terms: {filepath}")
-        return str(filepath)
+        Args:
+            content: Content text
+            title: Title text
+            keywords: List of keywords
+            
+        Returns:
+            Set of search terms
+        """
+        terms = set()
+        
+        # Add words from content (significant words only)
+        content_words = [
+            word.strip(ExportConstants.PUNCTUATION_CHARS) 
+            for word in content.split()
+        ]
+        significant_words = [
+            word for word in content_words 
+            if len(word) > ExportConstants.MIN_WORD_LENGTH and word.isalpha()
+        ]
+        terms.update(significant_words[:ExportConstants.MAX_SIGNIFICANT_WORDS])
+        
+        # Add title words
+        title_words = [
+            word.strip(ExportConstants.PUNCTUATION_CHARS) 
+            for word in title.split()
+        ]
+        terms.update([word for word in title_words if word.isalpha()])
+        
+        # Add keywords
+        terms.update([kw.lower().strip() for kw in keywords if kw.strip()])
+        
+        return terms
+    
+    def _write_search_index_file(self, filepath: Path, search_index: Dict[str, Any]) -> None:
+        """Write search index to file
+        
+        Args:
+            filepath: Path to output file
+            search_index: Search index dictionary
+            
+        Raises:
+            FileWriteError: If file writing fails
+        """
+        try:
+            with open(filepath, 'w', encoding=ExportConstants.DEFAULT_ENCODING) as f:
+                json.dump(search_index, f, indent=2, ensure_ascii=False)
+        except (OSError, IOError, PermissionError) as e:
+            raise FileWriteError(f"Failed to write search index file '{filepath}': {e}") from e
     
     def export_url_sitemap(self, results: Dict[str, Any], filename: str = "scraped_urls.txt"):
         """Export a simple sitemap of all scraped URLs"""
@@ -330,7 +820,7 @@ class DataExporter:
         logger.info(f"Created summary report: {filepath}")
         return str(filepath)
     
-    def export_all_formats(self, results: Dict[str, Any]) -> Dict[str, str]:
+    def export_all_formats(self, results: Dict[str, Any]) -> ExportSummary:
         """
         Export scraped results in all available formats for comprehensive coverage.
         
@@ -355,35 +845,54 @@ class DataExporter:
                                     chunks, metadata, URLs, and session statistics
                                     
         Returns:
-            Dict[str, str]: Mapping of format names to exported file paths
-                          Keys: 'jsonl', 'structured_csv', 'parquet', 'sitemap', 
-                               'report', 'search_index', plus content type files
+            ExportSummary: Summary of all export operations with success/failure details
                                
         Example:
-            exported = exporter.export_all_formats(scraping_results)
-            print(f"RAG data ready at: {exported['jsonl']}")
-            print(f"Analytics data at: {exported['structured_csv']}")
+            summary = exporter.export_all_formats(scraping_results)
+            print(f"Success rate: {summary.success_rate:.1f}%")
+            for result in summary.export_results:
+                if result.success:
+                    print(f"✅ {result.format_type}: {result.file_path}")
         """
         logger.info("Exporting results in all formats...")
         
-        chunks = results.get('chunks', [])
-        exported_files = {}
+        try:
+            self._validate_results_data(results)
+            chunks = results.get('chunks', [])
+            
+            # Reset export summary for this batch
+            self.export_summary = ExportSummary()
+            
+            # Standard exports
+            self.export_to_jsonl(chunks)
+            self.export_structured_csv(results)
+            self.export_url_sitemap(results)
+            self.create_summary_report(results)
+            self.create_search_index(chunks)
+            
+            # Content type exports (returns dict of files, not ExportResult)
+            content_type_files = self.export_content_by_type(results)
+            
+            # Try Parquet export
+            self.export_to_parquet(chunks)
+            
+            # Finalize summary
+            self.export_summary.end_time = datetime.now()
+            
+            logger.info(f"Export batch completed: {self.export_summary.successful_exports}/"
+                       f"{self.export_summary.total_exports} successful")
+            
+            return self.export_summary
+            
+        except Exception as e:
+            logger.error(f"Export batch failed: {e}")
+            self.export_summary.end_time = datetime.now()
+            return self.export_summary
+    
+    def get_export_summary(self) -> ExportSummary:
+        """Get the current export summary
         
-        # Standard exports
-        exported_files['jsonl'] = self.export_to_jsonl(chunks)
-        exported_files['structured_csv'] = self.export_structured_csv(results)
-        exported_files['sitemap'] = self.export_url_sitemap(results)
-        exported_files['report'] = self.create_summary_report(results)
-        exported_files['search_index'] = self.create_search_index(chunks)
-        
-        # Content type exports
-        content_type_files = self.export_content_by_type(results)
-        exported_files.update(content_type_files)
-        
-        # Try Parquet export
-        parquet_file = self.export_to_parquet(chunks)
-        if parquet_file:
-            exported_files['parquet'] = parquet_file
-        
-        logger.info(f"Exported {len(exported_files)} files to {self.output_dir}")
-        return exported_files 
+        Returns:
+            ExportSummary: Current export summary with all operations
+        """
+        return self.export_summary 
