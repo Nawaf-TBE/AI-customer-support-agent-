@@ -160,78 +160,62 @@ class TextChunk:
             'keywords': self.keywords
         }
 
-class ContentProcessor:
-    """Processes HTML content into clean, structured text chunks
+
+class ContentTypeDetector:
+    """Detects content type based on URL patterns and HTML content
     
-    This class handles the complete content processing workflow:
-    - Extracting metadata from HTML
-    - Cleaning and converting HTML to text
-    - Chunking content into manageable pieces
-    - Maintaining content structure and context
+    This class analyzes URLs and HTML content to determine the type
+    of content (FAQ, guide, troubleshooting, etc.)
     """
     
-    def __init__(
-        self, 
-        chunk_size: int = ProcessingConstants.DEFAULT_CHUNK_SIZE,
-        overlap_size: int = ProcessingConstants.DEFAULT_OVERLAP_SIZE, 
-        min_chunk_size: int = ProcessingConstants.DEFAULT_MIN_CHUNK_SIZE
-    ):
-        """Initialize the content processor with chunking parameters
+    @staticmethod
+    def detect(html_content: str, url: str) -> str:
+        """Detect the type of content based on HTML and URL patterns
         
         Args:
-            chunk_size: Maximum size of each text chunk in characters
-            overlap_size: Number of characters to overlap between chunks
-            min_chunk_size: Minimum size for a chunk to be considered valid
+            html_content: HTML content to analyze
+            url: URL to analyze for patterns
             
-        Raises:
-            ValueError: If parameters are invalid
-        """
-        self._validate_chunk_parameters(chunk_size, overlap_size, min_chunk_size)
-        
-        self.chunk_size = chunk_size
-        self.overlap_size = overlap_size
-        self.min_chunk_size = min_chunk_size
-        
-        # Configure html2text converter
-        self.h2t = self._configure_html2text()
-    
-    def _validate_chunk_parameters(self, chunk_size: int, overlap_size: int, min_chunk_size: int) -> None:
-        """Validate chunking parameters
-        
-        Args:
-            chunk_size: Maximum chunk size
-            overlap_size: Overlap between chunks
-            min_chunk_size: Minimum chunk size
-            
-        Raises:
-            ValueError: If parameters are invalid
-        """
-        if chunk_size <= 0:
-            raise ValueError("Chunk size must be positive")
-        if overlap_size < 0:
-            raise ValueError("Overlap size cannot be negative")
-        if min_chunk_size <= 0:
-            raise ValueError("Minimum chunk size must be positive")
-        if overlap_size >= chunk_size:
-            raise ValueError("Overlap size must be less than chunk size")
-        if min_chunk_size > chunk_size:
-            raise ValueError("Minimum chunk size cannot exceed chunk size")
-    
-    def _configure_html2text(self) -> html2text.HTML2Text:
-        """Configure and return html2text converter
-        
         Returns:
-            Configured HTML2Text instance
+            Detected content type string
         """
-        h2t = html2text.HTML2Text()
-        h2t.ignore_links = False
-        h2t.ignore_images = True
-        h2t.ignore_emphasis = False
-        h2t.body_width = 0  # No line wrapping
-        h2t.single_line_break = True
-        return h2t
+        html_lower = html_content.lower()
+        url_lower = url.lower()
         
-    def extract_metadata(self, html_content: str, url: str) -> Dict[str, Any]:
+        # Check each content type pattern
+        for content_type, patterns in ProcessingConstants.CONTENT_TYPE_PATTERNS.items():
+            # Check URL patterns
+            if any(pattern in url_lower for pattern in patterns['url_patterns']):
+                return content_type
+            
+            # Check content patterns
+            if patterns['content_patterns']:
+                if content_type == 'faq':
+                    # Special case for FAQ detection
+                    if 'frequently asked questions' in html_lower or html_lower.count('q:') > 3:
+                        return content_type
+                else:
+                    if any(phrase in html_lower for phrase in patterns['content_patterns']):
+                        return content_type
+        
+        return 'support_article'
+
+
+class MetadataExtractor:
+    """Extracts metadata from HTML content
+    
+    This class handles all metadata extraction operations including:
+    - Page title and description
+    - Keywords and headings
+    - Internal links
+    - Content type detection
+    """
+    
+    def __init__(self):
+        """Initialize the metadata extractor"""
+        self.content_type_detector = ContentTypeDetector()
+    
+    def extract(self, html_content: str, url: str) -> Dict[str, Any]:
         """Extract comprehensive metadata from HTML content
         
         Args:
@@ -260,7 +244,7 @@ class ContentProcessor:
                 'keywords': self._extract_keywords(soup),
                 'headings': self._extract_headings(soup),
                 'links': self._extract_internal_links(soup, url),
-                'content_type': self._detect_content_type(html_content, url)
+                'content_type': self.content_type_detector.detect(html_content, url)
             })
             
             return metadata
@@ -422,39 +406,36 @@ class ContentProcessor:
         if base_domain in link_domain:
             return True
         return any(domain in link_domain for domain in ProcessingConstants.INTERNAL_DOMAINS)
+
+
+class HTMLCleaner:
+    """Cleans HTML and converts it to structured text
     
-    def _detect_content_type(self, html_content: str, url: str) -> str:
-        """Detect the type of content based on HTML and URL patterns
+    This class handles:
+    - Removing unwanted HTML elements
+    - Converting HTML to clean text/markdown
+    - Text normalization and cleanup
+    """
+    
+    def __init__(self):
+        """Initialize the HTML cleaner"""
+        self.h2t = self._configure_html2text()
+    
+    def _configure_html2text(self) -> html2text.HTML2Text:
+        """Configure and return html2text converter
         
-        Args:
-            html_content: HTML content to analyze
-            url: URL to analyze for patterns
-            
         Returns:
-            Detected content type string
+            Configured HTML2Text instance
         """
-        html_lower = html_content.lower()
-        url_lower = url.lower()
-        
-        # Check each content type pattern
-        for content_type, patterns in ProcessingConstants.CONTENT_TYPE_PATTERNS.items():
-            # Check URL patterns
-            if any(pattern in url_lower for pattern in patterns['url_patterns']):
-                return content_type
-            
-            # Check content patterns
-            if patterns['content_patterns']:
-                if content_type == 'faq':
-                    # Special case for FAQ detection
-                    if 'frequently asked questions' in html_lower or html_lower.count('q:') > 3:
-                        return content_type
-                else:
-                    if any(phrase in html_lower for phrase in patterns['content_patterns']):
-                        return content_type
-        
-        return 'support_article'
+        h2t = html2text.HTML2Text()
+        h2t.ignore_links = False
+        h2t.ignore_images = True
+        h2t.ignore_emphasis = False
+        h2t.body_width = 0  # No line wrapping
+        h2t.single_line_break = True
+        return h2t
     
-    def clean_html(self, html_content: str) -> str:
+    def clean(self, html_content: str) -> str:
         """Clean and convert HTML to markdown/text
         
         Args:
@@ -486,6 +467,23 @@ class ContentProcessor:
         except Exception as e:
             logger.error(f"Failed to clean HTML content: {e}")
             raise TextCleaningError(f"HTML cleaning failed: {e}") from e
+    
+    def _parse_html(self, html_content: str) -> BeautifulSoup:
+        """Parse HTML content with error handling
+        
+        Args:
+            html_content: Raw HTML to parse
+            
+        Returns:
+            BeautifulSoup object
+            
+        Raises:
+            HTMLParsingError: If parsing fails
+        """
+        try:
+            return BeautifulSoup(html_content, 'lxml')
+        except Exception as e:
+            raise HTMLParsingError(f"Failed to parse HTML: {e}") from e
     
     def _remove_unwanted_elements(self, soup: BeautifulSoup) -> None:
         """Remove unwanted HTML elements
@@ -527,7 +525,14 @@ class ContentProcessor:
             return soup.get_text()
     
     def _clean_text(self, text: str) -> str:
-        """Clean and normalize text content"""
+        """Clean and normalize text content
+        
+        Args:
+            text: Text to clean
+            
+        Returns:
+            Cleaned text
+        """
         # Remove excessive whitespace
         text = re.sub(r'\n\s*\n\s*\n', '\n\n', text)  # Multiple newlines to double
         text = re.sub(r'[ \t]+', ' ', text)  # Multiple spaces to single
@@ -545,6 +550,59 @@ class ContentProcessor:
         text = re.sub(r'\n[-=]{4,}\n', '\n', text)
         
         return text.strip()
+
+
+class TextChunker:
+    """Splits text content into manageable chunks with overlap
+    
+    This class handles:
+    - Smart text chunking with configurable size and overlap
+    - Sentence-boundary aware splitting
+    - Chunk metadata generation
+    """
+    
+    def __init__(
+        self,
+        chunk_size: int = ProcessingConstants.DEFAULT_CHUNK_SIZE,
+        overlap_size: int = ProcessingConstants.DEFAULT_OVERLAP_SIZE,
+        min_chunk_size: int = ProcessingConstants.DEFAULT_MIN_CHUNK_SIZE
+    ):
+        """Initialize the text chunker
+        
+        Args:
+            chunk_size: Maximum size of each text chunk in characters
+            overlap_size: Number of characters to overlap between chunks
+            min_chunk_size: Minimum size for a chunk to be considered valid
+            
+        Raises:
+            ValueError: If parameters are invalid
+        """
+        self._validate_parameters(chunk_size, overlap_size, min_chunk_size)
+        self.chunk_size = chunk_size
+        self.overlap_size = overlap_size
+        self.min_chunk_size = min_chunk_size
+    
+    def _validate_parameters(self, chunk_size: int, overlap_size: int, min_chunk_size: int) -> None:
+        """Validate chunking parameters
+        
+        Args:
+            chunk_size: Maximum chunk size
+            overlap_size: Overlap between chunks
+            min_chunk_size: Minimum chunk size
+            
+        Raises:
+            ValueError: If parameters are invalid
+        """
+        if chunk_size <= 0:
+            raise ValueError("Chunk size must be positive")
+        if overlap_size < 0:
+            raise ValueError("Overlap size cannot be negative")
+        if min_chunk_size <= 0:
+            raise ValueError("Minimum chunk size must be positive")
+        if overlap_size >= chunk_size:
+            raise ValueError("Overlap size must be less than chunk size")
+        if min_chunk_size > chunk_size:
+            raise ValueError("Minimum chunk size cannot exceed chunk size")
     
     def create_chunks(self, content: str, metadata: Dict[str, Any]) -> List[TextChunk]:
         """Split content into overlapping chunks with metadata
@@ -779,6 +837,98 @@ class ContentProcessor:
                 return heading['text']
         
         return None
+
+
+class ContentProcessor:
+    """Main coordinator for processing HTML content into clean, structured text chunks
+    
+    This class orchestrates the content processing workflow by delegating to specialized components:
+    - MetadataExtractor: Extracts metadata from HTML
+    - HTMLCleaner: Cleans and converts HTML to text
+    - TextChunker: Splits content into manageable chunks
+    
+    The processor maintains backward compatibility with the original API while
+    providing a more modular and maintainable architecture.
+    """
+    
+    def __init__(
+        self, 
+        chunk_size: int = ProcessingConstants.DEFAULT_CHUNK_SIZE,
+        overlap_size: int = ProcessingConstants.DEFAULT_OVERLAP_SIZE, 
+        min_chunk_size: int = ProcessingConstants.DEFAULT_MIN_CHUNK_SIZE
+    ):
+        """Initialize the content processor with specialized components
+        
+        Args:
+            chunk_size: Maximum size of each text chunk in characters
+            overlap_size: Number of characters to overlap between chunks
+            min_chunk_size: Minimum size for a chunk to be considered valid
+            
+        Raises:
+            ValueError: If parameters are invalid
+        """
+        # Initialize specialized components
+        self.metadata_extractor = MetadataExtractor()
+        self.html_cleaner = HTMLCleaner()
+        self.text_chunker = TextChunker(chunk_size, overlap_size, min_chunk_size)
+        
+        # Store settings for backward compatibility
+        self.chunk_size = chunk_size
+        self.overlap_size = overlap_size
+        self.min_chunk_size = min_chunk_size
+    
+    def extract_metadata(self, html_content: str, url: str) -> Dict[str, Any]:
+        """Extract comprehensive metadata from HTML content
+        
+        Delegates to MetadataExtractor for actual extraction.
+        
+        Args:
+            html_content: Raw HTML content to process
+            url: Source URL of the content
+            
+        Returns:
+            Dictionary containing extracted metadata
+            
+        Raises:
+            MetadataExtractionError: If metadata extraction fails
+            HTMLParsingError: If HTML parsing fails
+        """
+        return self.metadata_extractor.extract(html_content, url)
+    
+    def clean_html(self, html_content: str) -> str:
+        """Clean and convert HTML to markdown/text
+        
+        Delegates to HTMLCleaner for actual cleaning.
+        
+        Args:
+            html_content: Raw HTML content to clean
+            
+        Returns:
+            Cleaned text content
+            
+        Raises:
+            TextCleaningError: If text cleaning fails
+            HTMLParsingError: If HTML parsing fails
+        """
+        return self.html_cleaner.clean(html_content)
+    
+    def create_chunks(self, content: str, metadata: Dict[str, Any]) -> List[TextChunk]:
+        """Split content into overlapping chunks with metadata
+        
+        Delegates to TextChunker for actual chunking.
+        
+        Args:
+            content: Clean text content to chunk
+            metadata: Metadata dictionary for the content
+            
+        Returns:
+            List of TextChunk objects
+            
+        Raises:
+            ChunkingError: If chunking fails
+            ValueError: If content or metadata is invalid
+        """
+        return self.text_chunker.create_chunks(content, metadata)
     
     def process_content(self, html_content: str, url: str) -> Dict[str, Any]:
         """Process HTML content into structured chunks
