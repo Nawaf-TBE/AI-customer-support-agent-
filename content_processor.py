@@ -1,5 +1,12 @@
 """
 Content processing module for converting HTML to clean text chunks
+
+This module provides a modular architecture for processing HTML content:
+- ContentProcessor: Main coordinator class
+- MetadataExtractor: Extracts metadata from HTML
+- HTMLCleaner: Cleans and converts HTML to text
+- TextChunker: Splits content into manageable chunks
+- ContentTypeDetector: Detects content type from HTML and URLs
 """
 import logging
 import re
