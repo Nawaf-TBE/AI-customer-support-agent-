@@ -763,13 +763,15 @@ class TextChunker:
         Returns:
             TextChunk object
         """
+        # Use chunk_num as temporary total_chunks to pass validation
+        # Will be updated to correct value later by _update_total_chunks
         chunk = TextChunk(
             content=content,
             chunk_id=f"{metadata['url']}_chunk_{chunk_num:03d}",
             source_url=metadata['url'],
             title=metadata.get('title', ''),
             chunk_index=chunk_num,
-            total_chunks=0,  # Will be updated later
+            total_chunks=chunk_num,  # Temporary value, will be updated
             word_count=len(content.split()),
             char_count=len(content),
             content_type=metadata.get('content_type', 'support_article'),
