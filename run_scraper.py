@@ -143,143 +143,265 @@ def setup_logging(verbose: bool = False) -> None:
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
 
-def print_banner() -> None:
-    """Print application banner with consistent formatting"""
-    banner = f"""
+
+class OutputFormatter:
+    """Handles all display and formatting for CLI output
+    
+    This class centralizes all printing and formatting logic,
+    providing consistent, well-formatted output throughout the CLI.
+    """
+    
+    @staticmethod
+    def print_banner() -> None:
+        """Print application banner with consistent formatting"""
+        banner = f"""
 ╔{'═' * CLIConstants.BANNER_WIDTH}╗
 ║{' ' * 20}Aven Support Scraper{' ' * 21}║
 ║{' ' * 14}Powered by Exa.ai Neural Search{' ' * 15}║
 ╚{'═' * CLIConstants.BANNER_WIDTH}╝
 """
-    print(banner)
+        print(banner)
+    
+    @staticmethod
+    def print_config_info() -> None:
+        """Print current configuration in a formatted way
+        
+        Displays key configuration parameters including URLs, limits,
+        and output settings for user verification.
+        """
+        print(f"{CLIConstants.SYMBOLS['clipboard']} Configuration:")
+        print(f"   • Base URL: {config.base_url}")
+        print(f"   • Max pages: {config.max_subpages}")
+        print(f"   • Chunk size: {config.chunk_size}")
+        print(f"   • Output dir: {config.output_dir}")
+        print(f"   • Rate limit: {config.requests_per_minute} req/min")
+        print()
+    
+    @staticmethod
+    def print_validation_results(result: 'ValidationResult') -> None:
+        """Print validation results in a formatted way
+        
+        Args:
+            result: Validation result to display
+        """
+        # Print passed checks
+        for check in result.passed_checks:
+            print(check)
+        
+        # Print issues if any
+        if result.has_issues:
+            print(f"\n{CLIConstants.SYMBOLS['alert']} Setup Issues Found:")
+            for issue in result.issues:
+                print(f"   {issue}")
+            print("\nPlease fix these issues before running the scraper.")
+        else:
+            print(f"{CLIConstants.VALIDATION_MESSAGES['all_checks_passed']}\n")
+    
+    @staticmethod
+    def print_scraping_results(results, duration: float) -> None:
+        """Print formatted scraping results summary
+        
+        Args:
+            results: Scraping results object
+            duration: Duration in minutes
+        """
+        stats = results.session_stats
+        
+        print(f"""
+{CLIConstants.SYMBOLS['party']} Scraping completed successfully!
 
-def print_config_info() -> None:
-    """Print current configuration in a formatted way
+{CLIConstants.SYMBOLS['chart']} Results Summary:
+   • Duration: {duration:.1f} minutes
+   • URLs discovered: {stats.urls_discovered}
+   • URLs scraped: {stats.urls_scraped}
+   • URLs failed: {stats.urls_failed}
+   • Total chunks: {results.total_chunks}
+   • Total words: {stats.total_words:,}
+""")
+        
+        # Content type breakdown
+        if stats.content_types:
+            print(f"{CLIConstants.SYMBOLS['books']} Content Types Found:")
+            for content_type, count in stats.content_types.items():
+                formatted_type = content_type.replace('_', ' ').title()
+                print(f"   • {formatted_type}: {count} chunks")
+            print()
     
-    Displays key configuration parameters including URLs, limits,
-    and output settings for user verification.
-    """
-    print(f"{CLIConstants.SYMBOLS['clipboard']} Configuration:")
-    print(f"   • Base URL: {config.base_url}")
-    print(f"   • Max pages: {config.max_subpages}")
-    print(f"   • Chunk size: {config.chunk_size}")
-    print(f"   • Output dir: {config.output_dir}")
-    print(f"   • Rate limit: {config.requests_per_minute} req/min")
-    print()
+    @staticmethod
+    def print_analysis_results(analysis_data: Dict[str, Any]) -> None:
+        """Print formatted analysis results
+        
+        Args:
+            analysis_data: Analysis data to display
+        """
+        print(f"""
+{CLIConstants.SYMBOLS['chart']} Analysis Results:
+   • Total chunks: {analysis_data['total_chunks']}
+   • Total words: {analysis_data['total_words']:,}
+   • Average chunk size: {analysis_data['average_chunk_size']:.0f} words
+   • Scraped URLs: {analysis_data['scraped_urls_count']}
+""")
+        
+        # Content type distribution
+        content_types = analysis_data['content_types']
+        if content_types:
+            print(f"{CLIConstants.SYMBOLS['books']} Content Type Distribution:")
+            total_chunks = analysis_data['total_chunks']
+            
+            for ct, count in sorted(content_types.items(), key=lambda x: x[1], reverse=True):
+                percentage = (count / total_chunks) * 100 if total_chunks > 0 else 0
+                formatted_type = ct.replace('_', ' ').title()
+                print(f"   • {formatted_type}: {count} chunks ({percentage:.1f}%)")
+    
+    @staticmethod
+    def print_export_summary(export_summary) -> None:
+        """Print export summary
+        
+        Args:
+            export_summary: Export summary object
+        """
+        print(f"{CLIConstants.SYMBOLS['folder']} Export Summary:")
+        print(f"   • Total exports: {export_summary.total_exports}")
+        print(f"   • Successful: {export_summary.successful_exports}")
+        print(f"   • Failed: {export_summary.failed_exports}")
+        print(f"   • Success rate: {export_summary.success_rate:.1f}%")
+        
+        # Show successful exports
+        successful_exports = [r for r in export_summary.export_results if r.success]
+        if successful_exports:
+            print(f"   • Files created:")
+            for result in successful_exports:
+                print(f"     - {result.format_type}: {result.file_path}")
+        print()
+    
+    @staticmethod
+    def print_config_overrides(overrides: List[str]) -> None:
+        """Print configuration overrides
+        
+        Args:
+            overrides: List of override messages
+        """
+        if overrides:
+            print("   • Configuration overrides:")
+            for override in overrides:
+                print(f"     - {override}")
+            print()
 
-def validate_setup() -> ValidationResult:
-    """Validate that everything is set up correctly
+
+class ConfigValidator:
+    """Validates configuration and system dependencies
     
-    Performs comprehensive validation of configuration, dependencies,
-    and system requirements for the scraper.
-    
-    Returns:
-        ValidationResult: Detailed validation results with issues and passed checks
-        
-    Raises:
-        ValidationError: If critical validation fails
+    This class handles all validation logic for the CLI,
+    including API key validation, directory checks, and
+    dependency verification.
     """
-    try:
-        result = ValidationResult(success=True)
+    
+    @staticmethod
+    def validate_setup() -> ValidationResult:
+        """Validate that everything is set up correctly
         
-        # Validate API key
-        result = _validate_api_key(result)
+        Performs comprehensive validation of configuration, dependencies,
+        and system requirements for the scraper.
         
-        # Validate output directory
-        result = _validate_output_directory(result)
+        Returns:
+            ValidationResult: Detailed validation results with issues and passed checks
+            
+        Raises:
+            ValidationError: If critical validation fails
+        """
+        try:
+            result = ValidationResult(success=True)
+            
+            # Validate API key
+            result = ConfigValidator._validate_api_key(result)
+            
+            # Validate output directory
+            result = ConfigValidator._validate_output_directory(result)
+            
+            # Validate dependencies
+            result = ConfigValidator._validate_dependencies(result)
+            
+            # Print results
+            OutputFormatter.print_validation_results(result)
+            
+            # Update success status
+            result.success = not result.has_issues
+            
+            return result
+            
+        except Exception as e:
+            raise ValidationError(f"Validation process failed: {e}") from e
+    
+    @staticmethod
+    def _validate_api_key(result: ValidationResult) -> ValidationResult:
+        """Validate API key configuration
         
-        # Validate dependencies
-        result = _validate_dependencies(result)
-        
-        # Print results
-        _print_validation_results(result)
-        
-        # Update success status
-        result.success = not result.has_issues
+        Args:
+            result: Current validation result to update
+            
+        Returns:
+            Updated validation result
+        """
+        if not config.exa_api_key or config.exa_api_key == CLIConstants.DEFAULT_API_KEY_PLACEHOLDER:
+            result.issues.append(CLIConstants.VALIDATION_MESSAGES['api_key_missing'])
+        else:
+            result.passed_checks.append(CLIConstants.VALIDATION_MESSAGES['api_key_valid'])
         
         return result
+    
+    @staticmethod
+    def _validate_output_directory(result: ValidationResult) -> ValidationResult:
+        """Validate output directory accessibility
         
-    except Exception as e:
-        raise ValidationError(f"Validation process failed: {e}") from e
-
-def _validate_api_key(result: ValidationResult) -> ValidationResult:
-    """Validate API key configuration
-    
-    Args:
-        result: Current validation result to update
+        Args:
+            result: Current validation result to update
+            
+        Returns:
+            Updated validation result
+        """
+        try:
+            Path(config.output_dir).mkdir(parents=True, exist_ok=True)
+            result.passed_checks.append(CLIConstants.VALIDATION_MESSAGES['output_dir_valid'])
+        except Exception as e:
+            result.issues.append(f"{CLIConstants.SYMBOLS['error']} Cannot access output directory: {e}")
         
-    Returns:
-        Updated validation result
-    """
-    if not config.exa_api_key or config.exa_api_key == CLIConstants.DEFAULT_API_KEY_PLACEHOLDER:
-        result.issues.append(CLIConstants.VALIDATION_MESSAGES['api_key_missing'])
-    else:
-        result.passed_checks.append(CLIConstants.VALIDATION_MESSAGES['api_key_valid'])
+        return result
     
-    return result
-
-def _validate_output_directory(result: ValidationResult) -> ValidationResult:
-    """Validate output directory accessibility
-    
-    Args:
-        result: Current validation result to update
+    @staticmethod
+    def _validate_dependencies(result: ValidationResult) -> ValidationResult:
+        """Validate required dependencies
         
-    Returns:
-        Updated validation result
-    """
-    try:
-        Path(config.output_dir).mkdir(parents=True, exist_ok=True)
-        result.passed_checks.append(CLIConstants.VALIDATION_MESSAGES['output_dir_valid'])
-    except Exception as e:
-        result.issues.append(f"{CLIConstants.SYMBOLS['error']} Cannot access output directory: {e}")
-    
-    return result
-
-def _validate_dependencies(result: ValidationResult) -> ValidationResult:
-    """Validate required dependencies
-    
-    Args:
-        result: Current validation result to update
+        Args:
+            result: Current validation result to update
+            
+        Returns:
+            Updated validation result
+        """
+        # Check Exa.ai SDK
+        try:
+            from exa_py import Exa
+            result.passed_checks.append(CLIConstants.VALIDATION_MESSAGES['exa_sdk_available'])
+        except ImportError:
+            result.issues.append(CLIConstants.VALIDATION_MESSAGES['exa_sdk_missing'])
         
-    Returns:
-        Updated validation result
-    """
-    # Check Exa.ai SDK
-    try:
-        from exa_py import Exa
-        result.passed_checks.append(CLIConstants.VALIDATION_MESSAGES['exa_sdk_available'])
-    except ImportError:
-        result.issues.append(CLIConstants.VALIDATION_MESSAGES['exa_sdk_missing'])
-    
-    # Check pandas
-    try:
-        import pandas as pd
-        result.passed_checks.append(CLIConstants.VALIDATION_MESSAGES['pandas_available'])
-    except ImportError:
-        result.issues.append(CLIConstants.VALIDATION_MESSAGES['pandas_missing'])
-    
-    return result
+        # Check pandas
+        try:
+            import pandas as pd
+            result.passed_checks.append(CLIConstants.VALIDATION_MESSAGES['pandas_available'])
+        except ImportError:
+            result.issues.append(CLIConstants.VALIDATION_MESSAGES['pandas_missing'])
+        
+        return result
 
-def _print_validation_results(result: ValidationResult) -> None:
-    """Print validation results in a formatted way
+class ScrapeCommandHandler:
+    """Handles the scrape command execution
     
-    Args:
-        result: Validation result to display
+    This class encapsulates all logic for executing the scrape command,
+    including configuration override, scraper execution, and export handling.
     """
-    # Print passed checks
-    for check in result.passed_checks:
-        print(check)
     
-    # Print issues if any
-    if result.has_issues:
-        print(f"\n{CLIConstants.SYMBOLS['alert']} Setup Issues Found:")
-        for issue in result.issues:
-            print(f"   {issue}")
-        print("\nPlease fix these issues before running the scraper.")
-    else:
-        print(f"{CLIConstants.VALIDATION_MESSAGES['all_checks_passed']}\n")
-
-def run_scraper(args: argparse.Namespace) -> CLIResult:
+    @staticmethod
+    def execute(args: argparse.Namespace) -> CLIResult:
     """Run the main scraping process
     
     Args:
