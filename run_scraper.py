@@ -7,6 +7,13 @@ offering multiple commands for scraping, analysis, and configuration validation.
 The CLI supports various output formats and provides comprehensive error handling
 and user feedback.
 
+Architecture:
+- ConfigValidator: Validates configuration and dependencies
+- OutputFormatter: Handles all display and formatting
+- ScrapeCommandHandler: Executes scrape command
+- AnalyzeCommandHandler: Executes analyze command
+- CLIOrchestrator: Main coordinator for CLI operations
+
 Commands:
 - scrape: Run the main scraping process
 - analyze: Analyze previously scraped results
