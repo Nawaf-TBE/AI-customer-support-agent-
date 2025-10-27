@@ -402,334 +402,287 @@ class ScrapeCommandHandler:
     
     @staticmethod
     def execute(args: argparse.Namespace) -> CLIResult:
-    """Run the main scraping process
-    
-    Args:
-        args: Parsed command line arguments
+        """Run the main scraping process
         
-    Returns:
-        CLIResult: Result of the scraping operation
-        
-    Raises:
-        ScrapingError: If scraping process fails
-        ConfigurationError: If configuration is invalid
-    """
-    try:
-        print(f"{CLIConstants.SYMBOLS['rocket']} Starting Aven support page scraping...")
-        
-        # Apply configuration overrides
-        _apply_config_overrides(args)
-        
-        # Initialize and run scraper
-        scraper = AvenScraper(api_key=args.api_key)
-        start_time = datetime.now()
-        
-        results = scraper.scrape_support_pages()
-        
-        # Check if scraping was successful
-        if not results.success:
-            error_msg = results.error or 'Unknown error'
-            print(f"{CLIConstants.SYMBOLS['error']} Scraping failed: {error_msg}")
-            return CLIResult(success=False, message=f"Scraping failed: {error_msg}")
-        
-        # Calculate duration
-        duration = (datetime.now() - start_time).total_seconds() / CLIConstants.SECONDS_PER_MINUTE
-        
-        # Print results summary
-        _print_scraping_results(results, duration)
-        
-        # Handle export if requested
-        if args.export_all:
-            _handle_export_all(results)
-        
-        print(f"{CLIConstants.SYMBOLS['folder']} All output saved to: {config.output_dir}/")
-        
-        return CLIResult(
-            success=True, 
-            message="Scraping completed successfully",
-            data={'results': results, 'duration': duration}
-        )
-        
-    except Exception as e:
-        error_msg = f"Scraping process failed: {e}"
-        print(f"{CLIConstants.SYMBOLS['error']} {error_msg}")
-        raise ScrapingError(error_msg) from e
-
-def _apply_config_overrides(args: argparse.Namespace) -> None:
-    """Apply command line argument overrides to configuration
-    
-    Args:
-        args: Parsed command line arguments
-    """
-    overrides_applied = []
-    
-    if args.max_pages:
-        config.max_subpages = args.max_pages
-        overrides_applied.append(f"max pages: {args.max_pages}")
-    
-    if args.output_dir:
-        config.output_dir = args.output_dir
-        overrides_applied.append(f"output dir: {args.output_dir}")
-    
-    if args.chunk_size:
-        config.chunk_size = args.chunk_size
-        overrides_applied.append(f"chunk size: {args.chunk_size}")
-    
-    if overrides_applied:
-        print("   • Configuration overrides:")
-        for override in overrides_applied:
-            print(f"     - {override}")
-        print()
-
-def _print_scraping_results(results, duration: float) -> None:
-    """Print formatted scraping results summary
-    
-    Args:
-        results: Scraping results object
-        duration: Duration in minutes
-    """
-    stats = results.session_stats
-    
-    print(f"""
-{CLIConstants.SYMBOLS['party']} Scraping completed successfully!
-
-{CLIConstants.SYMBOLS['chart']} Results Summary:
-   • Duration: {duration:.1f} minutes
-   • URLs discovered: {stats.urls_discovered}
-   • URLs scraped: {stats.urls_scraped}
-   • URLs failed: {stats.urls_failed}
-   • Total chunks: {results.total_chunks}
-   • Total words: {stats.total_words:,}
-""")
-    
-    # Content type breakdown
-    if stats.content_types:
-        print(f"{CLIConstants.SYMBOLS['books']} Content Types Found:")
-        for content_type, count in stats.content_types.items():
-            formatted_type = content_type.replace('_', ' ').title()
-            print(f"   • {formatted_type}: {count} chunks")
-        print()
-
-def _handle_export_all(results) -> None:
-    """Handle export in all formats
-    
-    Args:
-        results: Scraping results to export
-    """
-    try:
-        print(f"{CLIConstants.SYMBOLS['package']} Exporting in all formats...")
-        exporter = DataExporter(config.output_dir)
-        export_summary = exporter.export_all_formats(results.to_dict())
-        
-        print(f"{CLIConstants.SYMBOLS['folder']} Export Summary:")
-        print(f"   • Total exports: {export_summary.total_exports}")
-        print(f"   • Successful: {export_summary.successful_exports}")
-        print(f"   • Failed: {export_summary.failed_exports}")
-        print(f"   • Success rate: {export_summary.success_rate:.1f}%")
-        
-        # Show successful exports
-        successful_exports = [r for r in export_summary.export_results if r.success]
-        if successful_exports:
-            print(f"   • Files created:")
-            for result in successful_exports:
-                print(f"     - {result.format_type}: {result.file_path}")
-        print()
-        
-    except Exception as e:
-        print(f"{CLIConstants.SYMBOLS['warning']} Export failed: {e}")
-        # Don't fail the entire operation for export issues
-
-def analyze_results(args: argparse.Namespace) -> CLIResult:
-    """Analyze previously scraped results
-    
-    Args:
-        args: Parsed command line arguments containing results file path
-        
-    Returns:
-        CLIResult: Result of the analysis operation
-        
-    Raises:
-        AnalysisError: If analysis process fails
-    """
-    try:
-        results_file = Path(args.results_file)
-        
-        # Validate input file
-        if not results_file.exists():
-            error_msg = f"Results file not found: {results_file}"
+        Args:
+            args: Parsed command line arguments
+            
+        Returns:
+            CLIResult: Result of the scraping operation
+            
+        Raises:
+            ScrapingError: If scraping process fails
+            ConfigurationError: If configuration is invalid
+        """
+        try:
+            print(f"{CLIConstants.SYMBOLS['rocket']} Starting Aven support page scraping...")
+            
+            # Apply configuration overrides
+            ScrapeCommandHandler._apply_config_overrides(args)
+            
+            # Initialize and run scraper
+            scraper = AvenScraper(api_key=args.api_key)
+            start_time = datetime.now()
+            
+            results = scraper.scrape_support_pages()
+            
+            # Check if scraping was successful
+            if not results.success:
+                error_msg = results.error or 'Unknown error'
+                print(f"{CLIConstants.SYMBOLS['error']} Scraping failed: {error_msg}")
+                return CLIResult(success=False, message=f"Scraping failed: {error_msg}")
+            
+            # Calculate duration
+            duration = (datetime.now() - start_time).total_seconds() / CLIConstants.SECONDS_PER_MINUTE
+            
+            # Print results summary
+            OutputFormatter.print_scraping_results(results, duration)
+            
+            # Handle export if requested
+            if args.export_all:
+                ScrapeCommandHandler._handle_export_all(results)
+            
+            print(f"{CLIConstants.SYMBOLS['folder']} All output saved to: {config.output_dir}/")
+            
+            return CLIResult(
+                success=True, 
+                message="Scraping completed successfully",
+                data={'results': results, 'duration': duration}
+            )
+            
+        except Exception as e:
+            error_msg = f"Scraping process failed: {e}"
             print(f"{CLIConstants.SYMBOLS['error']} {error_msg}")
-            return CLIResult(success=False, message=error_msg)
+            raise ScrapingError(error_msg) from e
+    
+    @staticmethod
+    def _apply_config_overrides(args: argparse.Namespace) -> None:
+        """Apply command line argument overrides to configuration
         
-        if not results_file.suffix == CLIConstants.JSON_EXTENSION:
-            error_msg = f"Results file must be a JSON file: {results_file}"
+        Args:
+            args: Parsed command line arguments
+        """
+        overrides_applied = []
+        
+        if args.max_pages:
+            config.max_subpages = args.max_pages
+            overrides_applied.append(f"max pages: {args.max_pages}")
+        
+        if args.output_dir:
+            config.output_dir = args.output_dir
+            overrides_applied.append(f"output dir: {args.output_dir}")
+        
+        if args.chunk_size:
+            config.chunk_size = args.chunk_size
+            overrides_applied.append(f"chunk size: {args.chunk_size}")
+        
+        OutputFormatter.print_config_overrides(overrides_applied)
+    
+    @staticmethod
+    def _handle_export_all(results) -> None:
+        """Handle export in all formats
+        
+        Args:
+            results: Scraping results to export
+        """
+        try:
+            print(f"{CLIConstants.SYMBOLS['package']} Exporting in all formats...")
+            exporter = DataExporter(config.output_dir)
+            export_summary = exporter.export_all_formats(results.to_dict())
+            
+            OutputFormatter.print_export_summary(export_summary)
+            
+        except Exception as e:
+            print(f"{CLIConstants.SYMBOLS['warning']} Export failed: {e}")
+            # Don't fail the entire operation for export issues
+
+
+class AnalyzeCommandHandler:
+    """Handles the analyze command execution
+    
+    This class encapsulates all logic for analyzing previously scraped results,
+    including file loading, analysis, and optional export.
+    """
+    
+    @staticmethod
+    def execute(args: argparse.Namespace) -> CLIResult:
+        """Analyze previously scraped results
+        
+        Args:
+            args: Parsed command line arguments containing results file path
+            
+        Returns:
+            CLIResult: Result of the analysis operation
+            
+        Raises:
+            AnalysisError: If analysis process fails
+        """
+        try:
+            results_file = Path(args.results_file)
+            
+            # Validate input file
+            if not results_file.exists():
+                error_msg = f"Results file not found: {results_file}"
+                print(f"{CLIConstants.SYMBOLS['error']} {error_msg}")
+                return CLIResult(success=False, message=error_msg)
+            
+            if not results_file.suffix == CLIConstants.JSON_EXTENSION:
+                error_msg = f"Results file must be a JSON file: {results_file}"
+                print(f"{CLIConstants.SYMBOLS['error']} {error_msg}")
+                return CLIResult(success=False, message=error_msg)
+            
+            print(f"{CLIConstants.SYMBOLS['chart']} Analyzing results from: {results_file}")
+            
+            # Load and validate results
+            results = AnalyzeCommandHandler._load_results_file(results_file)
+            
+            # Perform analysis
+            analysis_data = AnalyzeCommandHandler._analyze_scraped_data(results)
+            
+            # Print analysis results
+            OutputFormatter.print_analysis_results(analysis_data)
+            
+            # Handle export if requested
+            if args.export_analysis:
+                AnalyzeCommandHandler._handle_analysis_export(results, results_file)
+            
+            return CLIResult(
+                success=True,
+                message="Analysis completed successfully",
+                data=analysis_data
+            )
+            
+        except Exception as e:
+            error_msg = f"Analysis failed: {e}"
             print(f"{CLIConstants.SYMBOLS['error']} {error_msg}")
-            return CLIResult(success=False, message=error_msg)
+            raise AnalysisError(error_msg) from e
+    
+    @staticmethod
+    def _load_results_file(results_file: Path) -> Dict[str, Any]:
+        """Load and validate results file
         
-        print(f"{CLIConstants.SYMBOLS['chart']} Analyzing results from: {results_file}")
+        Args:
+            results_file: Path to results JSON file
+            
+        Returns:
+            Loaded results dictionary
+            
+        Raises:
+            AnalysisError: If file loading fails
+        """
+        try:
+            with open(results_file, 'r', encoding='utf-8') as f:
+                results = json.load(f)
+            
+            # Basic validation
+            if not isinstance(results, dict):
+                raise AnalysisError("Results file must contain a JSON object")
+            
+            if 'chunks' not in results:
+                raise AnalysisError("Results file must contain 'chunks' key")
+            
+            return results
+            
+        except json.JSONDecodeError as e:
+            raise AnalysisError(f"Invalid JSON in results file: {e}") from e
+        except Exception as e:
+            raise AnalysisError(f"Failed to load results file: {e}") from e
+    
+    @staticmethod
+    def _analyze_scraped_data(results: Dict[str, Any]) -> Dict[str, Any]:
+        """Analyze scraped data and generate statistics
         
-        # Load and validate results
-        results = _load_results_file(results_file)
+        Args:
+            results: Results dictionary to analyze
+            
+        Returns:
+            Analysis data dictionary
+        """
+        chunks = results.get('chunks', [])
+        stats = results.get('session_stats', {})
         
-        # Perform analysis
-        analysis_data = _analyze_scraped_data(results)
+        # Basic statistics
+        total_words = sum(chunk.get('word_count', 0) for chunk in chunks)
+        avg_chunk_size = total_words / len(chunks) if chunks else 0
         
-        # Print analysis results
-        _print_analysis_results(analysis_data)
+        # Content type analysis
+        content_types = {}
+        for chunk in chunks:
+            ct = chunk.get('content_type', 'unknown')
+            content_types[ct] = content_types.get(ct, 0) + 1
         
-        # Handle export if requested
-        if args.export_analysis:
-            _handle_analysis_export(results, results_file)
+        return {
+            'total_chunks': len(chunks),
+            'total_words': total_words,
+            'average_chunk_size': avg_chunk_size,
+            'scraped_urls_count': len(results.get('scraped_urls', [])),
+            'content_types': content_types,
+            'session_stats': stats
+        }
+    
+    @staticmethod
+    def _handle_analysis_export(results: Dict[str, Any], results_file: Path) -> None:
+        """Handle export of analysis results
         
-        return CLIResult(
-            success=True,
-            message="Analysis completed successfully",
-            data=analysis_data
-        )
-        
-    except Exception as e:
-        error_msg = f"Analysis failed: {e}"
-        print(f"{CLIConstants.SYMBOLS['error']} {error_msg}")
-        raise AnalysisError(error_msg) from e
+        Args:
+            results: Results data to export
+            results_file: Original results file path
+        """
+        try:
+            exporter = DataExporter(results_file.parent)
+            export_summary = exporter.export_all_formats(results)
+            
+            successful_count = export_summary.successful_exports
+            print(f"\n{CLIConstants.SYMBOLS['folder']} Analysis exported: {successful_count} files created")
+            
+        except Exception as e:
+            print(f"{CLIConstants.SYMBOLS['warning']} Analysis export failed: {e}")
 
-def _load_results_file(results_file: Path) -> Dict[str, Any]:
-    """Load and validate results file
+class CLIOrchestrator:
+    """Main orchestrator for CLI operations
     
-    Args:
-        results_file: Path to results JSON file
-        
-    Returns:
-        Loaded results dictionary
-        
-    Raises:
-        AnalysisError: If file loading fails
+    This class coordinates all CLI operations, delegating to specialized
+    handlers for each command while maintaining a clean separation of concerns.
     """
-    try:
-        with open(results_file, 'r', encoding='utf-8') as f:
-            results = json.load(f)
-        
-        # Basic validation
-        if not isinstance(results, dict):
-            raise AnalysisError("Results file must contain a JSON object")
-        
-        if 'chunks' not in results:
-            raise AnalysisError("Results file must contain 'chunks' key")
-        
-        return results
-        
-    except json.JSONDecodeError as e:
-        raise AnalysisError(f"Invalid JSON in results file: {e}") from e
-    except Exception as e:
-        raise AnalysisError(f"Failed to load results file: {e}") from e
-
-def _analyze_scraped_data(results: Dict[str, Any]) -> Dict[str, Any]:
-    """Analyze scraped data and generate statistics
     
-    Args:
-        results: Results dictionary to analyze
+    @staticmethod
+    def run() -> int:
+        """Main CLI entry point
         
-    Returns:
-        Analysis data dictionary
-    """
-    chunks = results.get('chunks', [])
-    stats = results.get('session_stats', {})
+        Returns:
+            Exit code (0 for success, 1 for failure)
+        """
+        try:
+            parser = CLIOrchestrator._create_argument_parser()
+            args = parser.parse_args()
+            
+            # Show banner
+            OutputFormatter.print_banner()
+            
+            # Setup logging
+            setup_logging(getattr(args, 'verbose', False))
+            
+            # Handle commands
+            return CLIOrchestrator._handle_command(args, parser)
+            
+        except KeyboardInterrupt:
+            print(f"\n{CLIConstants.SYMBOLS['warning']} Operation cancelled by user")
+            return CLIConstants.EXIT_FAILURE
+        except Exception as e:
+            print(f"{CLIConstants.SYMBOLS['error']} Unexpected error: {e}")
+            return CLIConstants.EXIT_FAILURE
     
-    # Basic statistics
-    total_words = sum(chunk.get('word_count', 0) for chunk in chunks)
-    avg_chunk_size = total_words / len(chunks) if chunks else 0
-    
-    # Content type analysis
-    content_types = {}
-    for chunk in chunks:
-        ct = chunk.get('content_type', 'unknown')
-        content_types[ct] = content_types.get(ct, 0) + 1
-    
-    return {
-        'total_chunks': len(chunks),
-        'total_words': total_words,
-        'average_chunk_size': avg_chunk_size,
-        'scraped_urls_count': len(results.get('scraped_urls', [])),
-        'content_types': content_types,
-        'session_stats': stats
-    }
-
-def _print_analysis_results(analysis_data: Dict[str, Any]) -> None:
-    """Print formatted analysis results
-    
-    Args:
-        analysis_data: Analysis data to display
-    """
-    print(f"""
-{CLIConstants.SYMBOLS['chart']} Analysis Results:
-   • Total chunks: {analysis_data['total_chunks']}
-   • Total words: {analysis_data['total_words']:,}
-   • Average chunk size: {analysis_data['average_chunk_size']:.0f} words
-   • Scraped URLs: {analysis_data['scraped_urls_count']}
-""")
-    
-    # Content type distribution
-    content_types = analysis_data['content_types']
-    if content_types:
-        print(f"{CLIConstants.SYMBOLS['books']} Content Type Distribution:")
-        total_chunks = analysis_data['total_chunks']
+    @staticmethod
+    def _create_argument_parser() -> argparse.ArgumentParser:
+        """Create and configure the argument parser
         
-        for ct, count in sorted(content_types.items(), key=lambda x: x[1], reverse=True):
-            percentage = (count / total_chunks) * 100 if total_chunks > 0 else 0
-            formatted_type = ct.replace('_', ' ').title()
-            print(f"   • {formatted_type}: {count} chunks ({percentage:.1f}%)")
-
-def _handle_analysis_export(results: Dict[str, Any], results_file: Path) -> None:
-    """Handle export of analysis results
-    
-    Args:
-        results: Results data to export
-        results_file: Original results file path
-    """
-    try:
-        exporter = DataExporter(results_file.parent)
-        export_summary = exporter.export_all_formats(results)
-        
-        successful_count = export_summary.successful_exports
-        print(f"\n{CLIConstants.SYMBOLS['folder']} Analysis exported: {successful_count} files created")
-        
-    except Exception as e:
-        print(f"{CLIConstants.SYMBOLS['warning']} Analysis export failed: {e}")
-
-def main() -> int:
-    """Main CLI entry point
-    
-    Returns:
-        Exit code (0 for success, 1 for failure)
-    """
-    try:
-        parser = _create_argument_parser()
-        args = parser.parse_args()
-        
-        # Show banner
-        print_banner()
-        
-        # Setup logging
-        setup_logging(getattr(args, 'verbose', False))
-        
-        # Handle commands
-        return _handle_command(args, parser)
-        
-    except KeyboardInterrupt:
-        print(f"\n{CLIConstants.SYMBOLS['warning']} Operation cancelled by user")
-        return CLIConstants.EXIT_FAILURE
-    except Exception as e:
-        print(f"{CLIConstants.SYMBOLS['error']} Unexpected error: {e}")
-        return CLIConstants.EXIT_FAILURE
-
-def _create_argument_parser() -> argparse.ArgumentParser:
-    """Create and configure the argument parser
-    
-    Returns:
-        Configured ArgumentParser instance
-    """
-    parser = argparse.ArgumentParser(
-        description="Aven Support Scraper - Intelligent web scraping using Exa.ai",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+        Returns:
+            Configured ArgumentParser instance
+        """
+        parser = argparse.ArgumentParser(
+            description="Aven Support Scraper - Intelligent web scraping using Exa.ai",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""
 Examples:
   %(prog)s scrape                        # Basic scraping
   %(prog)s scrape --max-pages 100        # Scrape up to 100 pages
@@ -737,128 +690,147 @@ Examples:
   %(prog)s analyze results.json          # Analyze previous results
   %(prog)s validate                      # Check configuration
         """
-    )
-    
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
-    
-    # Scrape command
-    _add_scrape_parser(subparsers)
-    
-    # Analyze command
-    _add_analyze_parser(subparsers)
-    
-    # Validate command
-    _add_validate_parser(subparsers)
-    
-    # Config command
-    _add_config_parser(subparsers)
-    
-    return parser
-
-def _add_scrape_parser(subparsers) -> None:
-    """Add scrape command parser"""
-    scrape_parser = subparsers.add_parser('scrape', help='Run the scraper')
-    scrape_parser.add_argument('--api-key', help='Exa.ai API key (overrides config)')
-    scrape_parser.add_argument('--max-pages', type=int, help='Maximum pages to scrape')
-    scrape_parser.add_argument('--output-dir', help='Output directory')
-    scrape_parser.add_argument('--chunk-size', type=int, help='Text chunk size')
-    scrape_parser.add_argument('--export-all', action='store_true', 
-                               help='Export results in all available formats')
-    scrape_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
-
-def _add_analyze_parser(subparsers) -> None:
-    """Add analyze command parser"""
-    analyze_parser = subparsers.add_parser('analyze', help='Analyze scraped results')
-    analyze_parser.add_argument('results_file', help='Path to results JSON file')
-    analyze_parser.add_argument('--export-analysis', action='store_true',
-                                help='Export analysis in multiple formats')
-    analyze_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
-
-def _add_validate_parser(subparsers) -> None:
-    """Add validate command parser"""
-    validate_parser = subparsers.add_parser('validate', help='Validate configuration')
-    validate_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
-
-def _add_config_parser(subparsers) -> None:
-    """Add config command parser"""
-    config_parser = subparsers.add_parser('config', help='Show current configuration')
-
-def _handle_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
-    """Handle the parsed command
-    
-    Args:
-        args: Parsed command line arguments
-        parser: Argument parser instance
+        )
         
-    Returns:
-        Exit code
-    """
-    try:
-        if args.command == 'scrape':
-            return _handle_scrape_command(args)
-        elif args.command == 'analyze':
-            return _handle_analyze_command(args)
-        elif args.command == 'validate':
-            return _handle_validate_command()
-        elif args.command == 'config':
-            return _handle_config_command()
-        else:
-            parser.print_help()
-            return CLIConstants.EXIT_FAILURE
+        subparsers = parser.add_subparsers(dest='command', help='Available commands')
+        
+        # Scrape command
+        CLIOrchestrator._add_scrape_parser(subparsers)
+        
+        # Analyze command
+        CLIOrchestrator._add_analyze_parser(subparsers)
+        
+        # Validate command
+        CLIOrchestrator._add_validate_parser(subparsers)
+        
+        # Config command
+        CLIOrchestrator._add_config_parser(subparsers)
+        
+        return parser
+    
+    @staticmethod
+    def _add_scrape_parser(subparsers) -> None:
+        """Add scrape command parser"""
+        scrape_parser = subparsers.add_parser('scrape', help='Run the scraper')
+        scrape_parser.add_argument('--api-key', help='Exa.ai API key (overrides config)')
+        scrape_parser.add_argument('--max-pages', type=int, help='Maximum pages to scrape')
+        scrape_parser.add_argument('--output-dir', help='Output directory')
+        scrape_parser.add_argument('--chunk-size', type=int, help='Text chunk size')
+        scrape_parser.add_argument('--export-all', action='store_true', 
+                                   help='Export results in all available formats')
+        scrape_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    
+    @staticmethod
+    def _add_analyze_parser(subparsers) -> None:
+        """Add analyze command parser"""
+        analyze_parser = subparsers.add_parser('analyze', help='Analyze scraped results')
+        analyze_parser.add_argument('results_file', help='Path to results JSON file')
+        analyze_parser.add_argument('--export-analysis', action='store_true',
+                                    help='Export analysis in multiple formats')
+        analyze_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    
+    @staticmethod
+    def _add_validate_parser(subparsers) -> None:
+        """Add validate command parser"""
+        validate_parser = subparsers.add_parser('validate', help='Validate configuration')
+        validate_parser.add_argument('--verbose', '-v', action='store_true', help='Verbose output')
+    
+    @staticmethod
+    def _add_config_parser(subparsers) -> None:
+        """Add config command parser"""
+        config_parser = subparsers.add_parser('config', help='Show current configuration')
+    
+    @staticmethod
+    def _handle_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+        """Handle the parsed command
+        
+        Args:
+            args: Parsed command line arguments
+            parser: Argument parser instance
             
-    except (ValidationError, ScrapingError, AnalysisError, ConfigurationError) as e:
-        print(f"{CLIConstants.SYMBOLS['error']} {e}")
-        return CLIConstants.EXIT_FAILURE
-
-def _handle_scrape_command(args: argparse.Namespace) -> int:
-    """Handle scrape command
+        Returns:
+            Exit code
+        """
+        try:
+            if args.command == 'scrape':
+                return CLIOrchestrator._handle_scrape_command(args)
+            elif args.command == 'analyze':
+                return CLIOrchestrator._handle_analyze_command(args)
+            elif args.command == 'validate':
+                return CLIOrchestrator._handle_validate_command()
+            elif args.command == 'config':
+                return CLIOrchestrator._handle_config_command()
+            else:
+                parser.print_help()
+                return CLIConstants.EXIT_FAILURE
+                
+        except (ValidationError, ScrapingError, AnalysisError, ConfigurationError) as e:
+            print(f"{CLIConstants.SYMBOLS['error']} {e}")
+            return CLIConstants.EXIT_FAILURE
     
-    Args:
-        args: Parsed arguments
+    @staticmethod
+    def _handle_scrape_command(args: argparse.Namespace) -> int:
+        """Handle scrape command
         
-    Returns:
-        Exit code
-    """
-    print_config_info()
-    validation_result = validate_setup()
-    
-    if not validation_result.success:
-        return CLIConstants.EXIT_FAILURE
-    
-    scrape_result = run_scraper(args)
-    return scrape_result.exit_code
-
-def _handle_analyze_command(args: argparse.Namespace) -> int:
-    """Handle analyze command
-    
-    Args:
-        args: Parsed arguments
+        Args:
+            args: Parsed arguments
+            
+        Returns:
+            Exit code
+        """
+        OutputFormatter.print_config_info()
+        validation_result = ConfigValidator.validate_setup()
         
-    Returns:
-        Exit code
-    """
-    setup_logging(args.verbose)
-    analysis_result = analyze_results(args)
-    return analysis_result.exit_code
+        if not validation_result.success:
+            return CLIConstants.EXIT_FAILURE
+        
+        scrape_result = ScrapeCommandHandler.execute(args)
+        return scrape_result.exit_code
+    
+    @staticmethod
+    def _handle_analyze_command(args: argparse.Namespace) -> int:
+        """Handle analyze command
+        
+        Args:
+            args: Parsed arguments
+            
+        Returns:
+            Exit code
+        """
+        setup_logging(args.verbose)
+        analysis_result = AnalyzeCommandHandler.execute(args)
+        return analysis_result.exit_code
+    
+    @staticmethod
+    def _handle_validate_command() -> int:
+        """Handle validate command
+        
+        Returns:
+            Exit code
+        """
+        OutputFormatter.print_config_info()
+        validation_result = ConfigValidator.validate_setup()
+        return CLIConstants.EXIT_SUCCESS if validation_result.success else CLIConstants.EXIT_FAILURE
+    
+    @staticmethod
+    def _handle_config_command() -> int:
+        """Handle config command
+        
+        Returns:
+            Exit code
+        """
+        OutputFormatter.print_config_info()
+        return CLIConstants.EXIT_SUCCESS
 
-def _handle_validate_command() -> int:
-    """Handle validate command
+
+def main() -> int:
+    """Main entry point for backward compatibility
     
     Returns:
         Exit code
     """
-    print_config_info()
-    validation_result = validate_setup()
-    return CLIConstants.EXIT_SUCCESS if validation_result.success else CLIConstants.EXIT_FAILURE
+    return CLIOrchestrator.run()
 
-def _handle_config_command() -> int:
-    """Handle config command
-    
-    Returns:
-        Exit code
-    """
-    print_config_info()
-    return CLIConstants.EXIT_SUCCESS
 
 if __name__ == "__main__":
     sys.exit(main()) 
