@@ -170,4 +170,5 @@ module.exports = {
   customerQueryDemo,
   dataQualityDemo,
   runDemos
-}; 
+};
+// Safe no-op comment for CI/test commit 
