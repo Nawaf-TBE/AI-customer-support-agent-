@@ -144,4 +144,5 @@ app.post('/api/chat', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`RAG API server running on port ${PORT}`);
-}); 
+});
+// Safe comment for git push 
